@@ -73,7 +73,7 @@ class NotifyLogService:
             resend_count=data.resend_count,
             sent_at=data.sent_at,
             last_error_at=data.last_error_at,
-            metadata=data.metadata,
+            extra_data=data.extra_data,
         )
         self.db.add(log)
         await self.db.commit()

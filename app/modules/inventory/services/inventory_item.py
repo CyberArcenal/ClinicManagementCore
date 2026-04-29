@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import func, select, and_
 
 from app.common.exceptions.inventory import InsufficientStockError, InventoryItemNotFoundError
 from app.common.schema.base import PaginatedResponse

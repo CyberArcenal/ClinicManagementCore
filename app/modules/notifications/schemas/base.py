@@ -56,7 +56,7 @@ class NotifyLogBase(BaseSchema):
     resend_count: int = 0
     sent_at: Optional[datetime] = None
     last_error_at: Optional[datetime] = None
-    metadata: Optional[Dict[str, Any]] = None
+    extra_data: Optional[Dict[str, Any]] = None
 
 class NotifyLogCreate(NotifyLogBase):
     pass
@@ -70,7 +70,7 @@ class NotifyLogUpdate(BaseSchema):
     resend_count: Optional[int] = None
     sent_at: Optional[datetime] = None
     last_error_at: Optional[datetime] = None
-    metadata: Optional[Dict[str, Any]] = None
+    extra_data: Optional[Dict[str, Any]] = None
 
 class NotifyLogResponse(TimestampSchema, NotifyLogBase):
     pass

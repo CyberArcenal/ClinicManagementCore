@@ -2,10 +2,13 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.staff.nurse_profile_service import NurseProfileService
-from app.modules.staff.schemas import NurseProfileCreate, NurseProfileUpdate
-from app.modules.staff.models import NurseProfile
-from app.common.exceptions import NurseNotFoundError, UserNotFoundError, DuplicateLicenseError
+from app.common.exceptions.staff import DuplicateLicenseError, NurseNotFoundError
+from app.common.exceptions.user import UserNotFoundError
+from app.modules.staff.models.nurse_profile import NurseProfile
+from app.modules.staff.services.nurse_profile import NurseProfileService
+from app.modules.user.schemas.base import NurseProfileCreate, NurseProfileUpdate
+
+
 
 @pytest.fixture
 def mock_db():

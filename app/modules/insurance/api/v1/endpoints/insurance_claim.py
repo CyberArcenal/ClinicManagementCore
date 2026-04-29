@@ -7,6 +7,7 @@ from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.billing import InvoiceNotFoundError
 from app.common.exceptions.insurance import ClaimAmountExceedsInvoiceError, InsuranceClaimNotFoundError, InsuranceCoverageExpiredError, InsuranceDetailNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.insurance.schemas.base import InsuranceClaimCreate, InsuranceClaimResponse, InsuranceClaimUpdate
 from app.modules.insurance.services.insurance_claim import InsuranceClaimService
 from app.modules.user.models.base import User

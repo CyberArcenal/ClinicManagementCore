@@ -2,6 +2,11 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.exceptions.prescription import PrescriptionNotFoundError
+from app.modules.prescription.models.models import PrescriptionItem
+from app.modules.prescription.schemas.base import PrescriptionItemCreate, PrescriptionItemUpdate
+from app.modules.prescription.services.prescription_item import PrescriptionItemService
+
 
 @pytest.fixture
 def mock_db():

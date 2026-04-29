@@ -29,7 +29,7 @@ class NotifyLog(BaseModel):
     resend_count = Column(Integer, nullable=False, default=0)
     sent_at = Column(DateTime, nullable=True)
     last_error_at = Column(DateTime, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    extra_data = Column(JSON, nullable=True)
 
     # Note: BaseModel provides created_at & updated_at (Django uses created_at & updated_at too)
 

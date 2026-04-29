@@ -20,7 +20,7 @@ class InvoiceTransition(BaseStateTransition[Invoice]):
                 recipient=str(instance.patient.user_id),
                 subject='New Invoice',
                 message=f'Invoice {instance.invoice_number} for {instance.total} has been created.',
-                metadata={'invoice_id': instance.id, 'type': 'invoice_created'}
+                extra_data={'invoice_id': instance.id, 'type': 'invoice_created'}
             )
         # Could also send email if needed via channel='email'
 
@@ -38,5 +38,5 @@ class InvoiceTransition(BaseStateTransition[Invoice]):
                     recipient=str(instance.patient.user_id),
                     subject='Invoice Paid',
                     message=f'Invoice {instance.invoice_number} has been fully paid.',
-                    metadata={'invoice_id': instance.id, 'type': 'invoice_paid'}
+                    extra_data={'invoice_id': instance.id, 'type': 'invoice_paid'}
                 )

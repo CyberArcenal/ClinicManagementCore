@@ -1,10 +1,9 @@
 
 
-from app.core.database import SessionLocal
 # Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from app.core.database import AsyncSessionLocal
+
+
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session

@@ -3,12 +3,13 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
+from app.common.exceptions.prescription import PrescriptionItemNotFoundError, PrescriptionNotFoundError
 from app.modules.prescription.models import PrescriptionItem
 from app.modules.prescription.schemas import (
     PrescriptionItemCreate,
     PrescriptionItemUpdate,
 )
-from app.common.exceptions import PrescriptionNotFoundError, PrescriptionItemNotFoundError
+
 
 
 class PrescriptionItemService:

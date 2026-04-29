@@ -3,6 +3,13 @@ from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
+from app.common.exceptions.ehr import EHRNotFoundError
+from app.common.exceptions.prescription import PrescriptionNotFoundError
+from app.modules.prescription.models.models import Prescription, PrescriptionItem
+from app.modules.prescription.schemas.base import PrescriptionCreate, PrescriptionItemCreate, PrescriptionItemUpdate, PrescriptionUpdate
+from app.modules.prescription.services.prescription import PrescriptionService
+from app.modules.prescription.services.prescription_item import PrescriptionItemService
 
 @pytest.fixture
 def mock_db():

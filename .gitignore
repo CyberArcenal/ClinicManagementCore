@@ -1,1 +1,4 @@
 .env
+*.pyc
+*.db
+alembic.ini

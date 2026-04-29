@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import func, select, and_, or_
 
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.billing import InvoiceNotFoundError

@@ -5,10 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select, or_
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from app.common.exceptions.user import InvalidCredentialsError, UserAlreadyExistsError, UserNotFoundError
 from app.common.schema.base import PaginatedResponse
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate, UserUpdate, UserResponse
-from app.common.exceptions import UserNotFoundError, InvalidCredentialsError, UserAlreadyExistsError
+
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

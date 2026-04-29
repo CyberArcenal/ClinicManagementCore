@@ -2,10 +2,10 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.staff.receptionist_profile_service import ReceptionistProfileService
-from app.modules.staff.schemas import ReceptionistProfileCreate, ReceptionistProfileUpdate
-from app.modules.staff.models import ReceptionistProfile
-from app.common.exceptions import ReceptionistNotFoundError, UserNotFoundError
+from app.common.exceptions.user import UserNotFoundError
+from app.modules.staff.models.receptionist_profile import ReceptionistProfile
+from app.modules.staff.services.receptionist_profile import ReceptionistProfileService
+from app.modules.user.schemas.base import ReceptionistProfileCreate, ReceptionistProfileUpdate
 
 @pytest.fixture
 def mock_db():

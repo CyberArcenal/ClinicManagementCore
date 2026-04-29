@@ -3,11 +3,13 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.patient.patient_service import PatientService
-from app.modules.patient.schemas import PatientCreate, PatientUpdate
-from app.modules.patient.models import Patient
-from app.modules.user.models import User
-from app.common.exceptions import PatientNotFoundError, UserNotFoundError
+from app.common.exceptions.base import PatientNotFoundError
+from app.common.exceptions.user import UserNotFoundError
+from app.modules.patients.models.models import Patient
+from app.modules.patients.schemas.base import PatientCreate, PatientUpdate
+from app.modules.patients.services.patient import PatientService
+from app.modules.user.models.base import User
+
 
 @pytest.fixture
 def mock_db():

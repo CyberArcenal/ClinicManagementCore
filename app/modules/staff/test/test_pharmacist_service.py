@@ -2,10 +2,10 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.staff.pharmacist_profile_service import PharmacistProfileService
-from app.modules.staff.schemas import PharmacistProfileCreate, PharmacistProfileUpdate
-from app.modules.staff.models import PharmacistProfile
-from app.common.exceptions import PharmacistNotFoundError, UserNotFoundError
+from app.modules.staff.models.pharmacist_profile import PharmacistProfile
+from app.modules.staff.services.pharmacist_profile import PharmacistProfileService
+from app.modules.user.schemas.base import PharmacistProfileCreate
+
 
 @pytest.fixture
 def mock_db():

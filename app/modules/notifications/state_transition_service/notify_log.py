@@ -32,7 +32,7 @@ class NotifyLogTransition(BaseStateTransition[NotifyLog]):
                     template_svc = EmailTemplateService(db)
                     template = template_svc.get_template_by_name_sync(instance.type)
                     if template:
-                        context = instance.metadata or {}
+                        context = instance.extra_data or {}
                         rendered_subject, rendered_body = template_svc.render_template(template, context)
                     else:
                         error_msg = f"Template '{instance.type}' not found"

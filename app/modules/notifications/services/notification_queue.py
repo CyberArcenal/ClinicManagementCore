@@ -17,7 +17,7 @@ class NotificationQueueService:
         context: dict = None,
         subject: str = None,     # fallback if no template
         message: str = None,     # fallback if no template
-        metadata: dict = None
+        extra_data: dict = None
     ) -> None:
         db = SessionLocal()
         try:
@@ -31,8 +31,8 @@ class NotificationQueueService:
                     notification_type=template_name or 'generic',
                     message=final_message,
                     is_read=False,
-                    related_id=metadata.get('entity_id') if metadata else None,
-                    related_model=metadata.get('entity_type') if metadata else None
+                    related_id=extra_data.get('entity_id') if extra_data else None,
+                    related_model=extra_data.get('entity_type') if extra_data else None
                 )
                 service = InAppNotificationService(db)
                 service.create_notification(data)
@@ -49,7 +49,7 @@ class NotificationQueueService:
                     status='queued',
                     channel=channel,
                     priority='normal',
-                    metadata=context or {}
+                    extra_data=context or {}
                 )
                 svc = NotifyLogService(db)
                 svc.create_log(notify_data)

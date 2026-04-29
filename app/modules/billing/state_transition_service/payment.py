@@ -24,7 +24,7 @@ class PaymentTransition(BaseStateTransition[Payment]):
                 recipient=str(instance.invoice.patient.user_id),
                 subject='Payment Received',
                 message=f'Payment of {instance.amount} received for invoice {instance.invoice.invoice_number}.',
-                metadata={'payment_id': instance.id, 'type': 'payment_received'}
+                extra_data={'payment_id': instance.id, 'type': 'payment_received'}
             )
 
     def _update_invoice_status(self, invoice_id: int) -> None:
