@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.insurance.models import InsuranceDetail
+from app.modules.insurance.models.models import InsuranceDetail
 from app.modules.insurance.state_transition_service import InsuranceDetailTransition
 
 def register_insurance_detail_events():

@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from app.core.state_transition.base import BaseStateTransition
-from app.modules.inventory.models import InventoryItem
+from app.common.state_transition.base import BaseStateTransition
+from app.modules.inventory.models.models import InventoryItem
 
 class InventoryItemTransition(BaseStateTransition[InventoryItem]):
 

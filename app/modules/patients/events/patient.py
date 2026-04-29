@@ -1,8 +1,9 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.patient.models import Patient
-from app.modules.patient.state_transition_service import PatientTransition
+
+from app.modules.patients.models.models import Patient
+from app.modules.patients.state_transition_service.patient import PatientTransition
 
 def register_patient_events():
 

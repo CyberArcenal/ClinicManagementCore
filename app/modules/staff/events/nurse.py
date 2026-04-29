@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.staff.models import NurseProfile
+from app.modules.staff.models.nurse_profile import NurseProfile
 from app.modules.staff.state_transition_service import NurseProfileTransition
 
 def register_nurse_events():

@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from app.core.state_transition.base import BaseStateTransition
-from app.modules.patient.models import Patient
+from app.common.state_transition.base import BaseStateTransition
+from app.modules.patients.models.models import Patient
 
 class PatientTransition(BaseStateTransition[Patient]):
 

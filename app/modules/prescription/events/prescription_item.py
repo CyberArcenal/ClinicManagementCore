@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.prescription.models import PrescriptionItem
+from app.modules.prescription.models.models import PrescriptionItem
 from app.modules.prescription.state_transition_service import PrescriptionItemTransition
 
 def register_prescription_item_events():

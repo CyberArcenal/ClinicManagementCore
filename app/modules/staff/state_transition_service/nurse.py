@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from app.core.state_transition.base import BaseStateTransition
-from app.modules.staff.models import NurseProfile
+from app.common.state_transition.base import BaseStateTransition
+from app.modules.staff.models.nurse_profile import NurseProfile
 
 class NurseProfileTransition(BaseStateTransition[NurseProfile]):
 

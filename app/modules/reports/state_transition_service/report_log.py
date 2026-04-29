@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from app.core.state_transition.base import BaseStateTransition
-from app.modules.report_log.models import ReportLog
+from app.common.state_transition.base import BaseStateTransition
+from app.modules.reports.models.models import ReportLog
 
 class ReportLogTransition(BaseStateTransition[ReportLog]):
 

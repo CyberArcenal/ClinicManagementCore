@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.staff.models import ReceptionistProfile
+from app.modules.staff.models.receptionist_profile import ReceptionistProfile
 from app.modules.staff.state_transition_service import ReceptionistProfileTransition
 
 def register_receptionist_events():

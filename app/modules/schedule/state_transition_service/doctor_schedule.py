@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from app.core.state_transition.base import BaseStateTransition
-from app.modules.schedule.models import DoctorSchedule
+from app.common.state_transition.base import BaseStateTransition
+from app.modules.schedule.models.schedule import DoctorSchedule
 
 class DoctorScheduleTransition(BaseStateTransition[DoctorSchedule]):
 
