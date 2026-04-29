@@ -35,39 +35,7 @@ A modular, high‑performance backend for clinic management systems built with *
 
 ```
 ClinicManagementCore/
-├── app/
-│   ├── api/                 # API layer (routers, endpoints)
-│   │   ├── v1/
-│   │   │   └── endpoints/   # per‑module route handlers
-│   │   └── dependencies/    # DI (auth, db sessions)
-│   ├── core/                # config, database, security, exceptions
-│   ├── models/              # SQLAlchemy models (modular folders)
-│   │   ├── base.py          # declarative base & BaseModel (id, timestamps)
-│   │   ├── user/            # User, DoctorProfile, NurseProfile, etc.
-│   │   ├── patient/         # Patient model
-│   │   ├── appointment/     # Appointment model
-│   │   ├── ehr/             # Electronic Health Record
-│   │   ├── prescription/    # Prescription + items
-│   │   ├── lab_result/      # Lab results
-│   │   ├── treatment/       # Treatments / procedures
-│   │   ├── billing/         # Invoice, BillingItem, Payment
-│   │   ├── insurance/       # InsuranceDetail, InsuranceClaim
-│   │   ├── staff/           # DoctorSchedule
-│   │   ├── inventory/       # InventoryItem, Transaction
-│   │   ├── room/            # Room model
-│   │   ├── notifications/   # Notification model
-│   │   ├── reports/         # ReportLog
-│   │   └── patient_portal/  # Access logs
-│   ├── modules/             # Business logic (services, schemas per module)
-│   └── main.py              # FastAPI app entry point
-├── migrations/              # Alembic migration scripts
-├── tests/                   # Pytest suite
-├── .env                     # Environment variables (not committed)
-├── .gitignore
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-└── README.md
+
 ```
 
 > The model layer is already split by domain – each folder contains its own `models.py` and all are imported via `app/models/__init__.py` so that Alembic can discover them.

@@ -1,0 +1,41 @@
+from sqlalchemy import event
+from sqlalchemy.orm import Session as SQLSession
+import inspect
+from app.modules.staff.models import LabTechProfile
+from app.modules.staff.state_transition_service import LabTechProfileTransition
+
+def register_lab_tech_events():
+    # Similar pattern, rename appropriately
+    @event.listens_for(SQLSession, 'before_flush')
+    def capture_lab_tech_changes(session, flush_context, instances):
+        pending = session.info.setdefault('lab_tech_pending', {'new': [], 'updated': [], 'deleted': []})
+        for obj in session.new:
+            if isinstance(obj, LabTechProfile):
+                pending['new'].append(obj)
+        for obj in session.dirty:
+            if isinstance(obj, LabTechProfile):
+                state = inspect(obj)
+                changes = {}
+                for attr in state.attrs:
+                    if attr.history.has_changes():
+                        changes[attr.key] = attr.value
+                if changes:
+                    LabTechProfileTransition(session).on_before_update(obj, changes)
+                    pending['updated'].append({'instance': obj, 'changes': changes})
+        for obj in session.deleted:
+            if isinstance(obj, LabTechProfile):
+                LabTechProfileTransition(session).on_before_delete(obj)
+                pending['deleted'].append(obj)
+
+    @event.listens_for(SQLSession, 'after_commit')
+    def process_lab_tech_after_commit(session):
+        pending = session.info.pop('lab_tech_pending', None)
+        if not pending:
+            return
+        ts = LabTechProfileTransition(session)
+        for obj in pending['new']:
+            ts.on_after_create(obj)
+        for item in pending['updated']:
+            ts.on_after_update(item['instance'], item['changes'])
+        for obj in pending['deleted']:
+            ts.on_after_delete(obj)
