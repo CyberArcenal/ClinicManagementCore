@@ -3,6 +3,11 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import require_role
+from app.common.schema.base import PaginatedResponse
+from app.modules.notifications.schemas.base import NotifyLogCreate, NotifyLogResponse
+from app.modules.notifications.services.notify_log_service import NotifyLogService
 from app.modules.user.models import User
 
 router = APIRouter()
@@ -19,13 +24,13 @@ async def create_notify_log(
     return log
 
 
-@router.get("/", response_model=List[NotifyLogResponse])
+@router.get("/", response_model=PaginatedResponse[NotifyLogResponse])
 async def list_notify_logs(
     status_filter: Optional[str] = Query(None, alias="status"),
     channel: Optional[str] = Query(None),
     recipient_email: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
@@ -36,10 +41,9 @@ async def list_notify_logs(
         filters["channel"] = channel
     if recipient_email:
         filters["recipient_email"] = recipient_email
-
     service = NotifyLogService(db)
-    logs = await service.get_logs(filters=filters, skip=skip, limit=limit)
-    return logs
+    paginated = await service.get_logs(filters=filters, page=page, page_size=page_size)
+    return paginated
 
 
 @router.get("/{log_id}", response_model=NotifyLogResponse)

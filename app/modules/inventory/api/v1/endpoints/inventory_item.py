@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.inventory import InsufficientStockError, InventoryItemNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.inventory.schemas.base import InventoryItemCreate, InventoryItemResponse, InventoryItemUpdate
 from app.modules.inventory.services.inventory_item import InventoryItemService
 from app.modules.user.models import User
@@ -27,15 +28,16 @@ async def create_inventory_item(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[InventoryItemResponse])
+
+@router.get("/", response_model=PaginatedResponse[InventoryItemResponse])
 async def list_inventory_items(
     category: Optional[str] = Query(None),
     name_contains: Optional[str] = Query(None),
     low_stock_only: bool = Query(False),
     expired_only: bool = Query(False),
     is_active: Optional[bool] = Query(True),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -51,8 +53,12 @@ async def list_inventory_items(
     filters["is_active"] = is_active
 
     service = InventoryItemService(db)
-    items = await service.get_items(filters=filters, skip=skip, limit=limit)
-    return items
+    paginated = await service.get_items(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{item_id}", response_model=InventoryItemResponse)

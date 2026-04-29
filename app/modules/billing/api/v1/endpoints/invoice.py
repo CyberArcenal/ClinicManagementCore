@@ -1,4 +1,5 @@
 # app/modules/billing/invoice_api.py
+from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -7,6 +8,7 @@ from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.billing import InvoiceNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.billing.enums.base import InvoiceStatus
 from app.modules.billing.schemas.base import InvoiceCreate, InvoiceResponse, InvoiceUpdate
 from app.modules.billing.services.invoice import InvoiceService
@@ -30,14 +32,15 @@ async def create_invoice(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/", response_model=List[InvoiceResponse])
+
+@router.get("/", response_model=PaginatedResponse[InvoiceResponse])
 async def list_invoices(
     patient_id: Optional[int] = Query(None),
     status_filter: Optional[InvoiceStatus] = Query(None, alias="status"),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    date_from: Optional[datetime] = Query(None),
+    date_to: Optional[datetime] = Query(None),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -46,10 +49,18 @@ async def list_invoices(
         filters["patient_id"] = patient_id
     if status_filter:
         filters["status"] = status_filter
-    # date parsing could be added via datetime
+    if date_from:
+        filters["date_from"] = date_from
+    if date_to:
+        filters["date_to"] = date_to
+
     service = InvoiceService(db)
-    invoices = await service.get_invoices(filters=filters, skip=skip, limit=limit)
-    return invoices
+    paginated = await service.get_invoices(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{invoice_id}", response_model=InvoiceResponse)

@@ -1,4 +1,5 @@
 # app/modules/billing/payment_api.py
+from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.billing import InvoiceNotFoundError, OverpaymentError, PaymentNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.billing.enums.base import PaymentMethod
 from app.modules.billing.schemas.base import PaymentCreate, PaymentResponse, PaymentUpdate
 from app.modules.billing.services.payment import PaymentService
@@ -31,14 +33,15 @@ async def create_payment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[PaymentResponse])
+
+@router.get("/", response_model=PaginatedResponse[PaymentResponse])
 async def list_payments(
     invoice_id: Optional[int] = Query(None),
     method: Optional[PaymentMethod] = Query(None),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    date_from: Optional[datetime] = Query(None),
+    date_to: Optional[datetime] = Query(None),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -47,10 +50,18 @@ async def list_payments(
         filters["invoice_id"] = invoice_id
     if method:
         filters["method"] = method
-    # date filtering could be added
+    if date_from:
+        filters["date_from"] = date_from
+    if date_to:
+        filters["date_to"] = date_to
+
     service = PaymentService(db)
-    payments = await service.get_payments(filters=filters, skip=skip, limit=limit)
-    return payments
+    paginated = await service.get_payments(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{payment_id}", response_model=PaymentResponse)

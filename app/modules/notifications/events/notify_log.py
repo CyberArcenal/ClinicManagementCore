@@ -1,3 +1,4 @@
+import asyncio
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
@@ -46,7 +47,7 @@ def register_notify_log_events():
             return
         ts = NotifyLogTransition(session)
         for obj in pending['new']:
-            ts.on_after_create(obj)
+            asyncio.create_task(ts.on_after_create(obj))
         for item in pending['updated']:
             obj = item['instance']
             changes = item['changes']

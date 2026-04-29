@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.base import AppointmentConflictError, DoctorNotFoundError, DoctorUnavailableError, InvalidStatusTransitionError, PatientNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.appointment.enums.base import AppointmentStatus
 from app.modules.appointment.schemas.base import AppointmentCreate, AppointmentResponse, AppointmentUpdate
 
@@ -38,22 +39,18 @@ async def create_appointment(
         raise HTTPException(status_code=409, detail=str(e))
 
 
-@router.get("/", response_model=List[AppointmentResponse])
+@router.get("/", response_model=PaginatedResponse[AppointmentResponse])
 async def list_appointments(
     patient_id: Optional[int] = Query(None),
     doctor_id: Optional[int] = Query(None),
     status: Optional[AppointmentStatus] = Query(None),
     date_from: Optional[datetime] = Query(None),
     date_to: Optional[datetime] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    List appointments with filters.
-    Accessible by all authenticated users (filtered by role in service?).
-    """
     filters = {}
     if patient_id:
         filters["patient_id"] = patient_id
@@ -67,10 +64,12 @@ async def list_appointments(
         filters["date_to"] = date_to
 
     service = AppointmentService(db)
-    appointments = await service.get_appointments(
-        filters=filters, skip=skip, limit=limit
+    paginated = await service.get_appointments(
+        filters=filters,
+        page=page,
+        page_size=page_size
     )
-    return appointments
+    return paginated
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)

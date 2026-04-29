@@ -3,6 +3,13 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import get_current_user, require_role
+from app.common.exceptions.base import PatientNotFoundError
+from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.patients.schemas.base import PatientCreate, PatientResponse, PatientUpdate
+from app.modules.patients.services.patient import PatientService
 from app.modules.user.models import User
 
 router = APIRouter()
@@ -27,14 +34,14 @@ async def create_patient(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[PatientResponse])
+@router.get("/", response_model=PaginatedResponse[PatientResponse])
 async def list_patients(
     gender: Optional[str] = Query(None),
     blood_type: Optional[str] = Query(None),
     name: Optional[str] = Query(None, description="Search by user full name"),
     email: Optional[str] = Query(None, description="Search by user email"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("receptionist")),
 ):
@@ -49,8 +56,12 @@ async def list_patients(
         filters["user__email"] = email
 
     service = PatientService(db)
-    patients = await service.get_patients(filters=filters, skip=skip, limit=limit)
-    return patients
+    paginated = await service.get_patients(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{patient_id}", response_model=PatientResponse)

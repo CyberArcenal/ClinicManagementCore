@@ -7,6 +7,7 @@ from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.insurance import DuplicateInsuranceError, InsuranceDetailNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.insurance.schemas.base import InsuranceDetailCreate, InsuranceDetailResponse, InsuranceDetailUpdate
 from app.modules.insurance.services.insurance_detail import InsuranceDetailService
 from app.modules.user.models.base import User
@@ -34,12 +35,12 @@ async def create_insurance_detail(
         raise HTTPException(status_code=409, detail=str(e))
 
 
-@router.get("/", response_model=List[InsuranceDetailResponse])
+@router.get("/", response_model=PaginatedResponse[InsuranceDetailResponse])
 async def list_insurance_details(
     patient_id: Optional[int] = Query(None),
     provider_name: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -49,8 +50,12 @@ async def list_insurance_details(
     if provider_name:
         filters["provider_name"] = provider_name
     service = InsuranceDetailService(db)
-    details = await service.get_all_insurance_details(filters=filters, skip=skip, limit=limit)
-    return details
+    paginated = await service.get_all_insurance_details(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{detail_id}", response_model=InsuranceDetailResponse)

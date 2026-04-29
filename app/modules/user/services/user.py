@@ -2,9 +2,10 @@
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import func, select, or_
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from app.common.schema.base import PaginatedResponse
 from app.modules.user.models import User
 from app.modules.user.schemas import UserCreate, UserUpdate, UserResponse
 from app.common.exceptions import UserNotFoundError, InvalidCredentialsError, UserAlreadyExistsError
@@ -58,11 +59,11 @@ class UserService:
     async def get_users(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "id",
         descending: bool = False,
-    ) -> List[User]:
+    ) -> PaginatedResponse[User]:
         query = select(User)
         if filters:
             if "role" in filters:
@@ -73,14 +74,32 @@ class UserService:
                 query = query.where(User.email.ilike(f"%{filters['email_contains']}%"))
             if "full_name_contains" in filters:
                 query = query.where(User.full_name.ilike(f"%{filters['full_name_contains']}%"))
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Order by
         order_col = getattr(User, order_by, User.id)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
-        query = query.offset(skip).limit(limit)
+
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_user(self, data: UserCreate) -> User:
         # Check if email already exists

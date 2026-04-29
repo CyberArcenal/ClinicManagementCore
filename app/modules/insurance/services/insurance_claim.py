@@ -8,6 +8,7 @@ from sqlalchemy import select, func
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.billing import InvoiceNotFoundError
 from app.common.exceptions.insurance import ClaimAmountExceedsInvoiceError, DuplicateInsuranceError, InsuranceClaimNotFoundError, InsuranceCoverageExpiredError, InsuranceDetailNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.billing.models.base import Invoice
 from app.modules.insurance.models.models import InsuranceClaim, InsuranceDetail
 from app.modules.insurance.schemas.base import InsuranceClaimCreate, InsuranceClaimUpdate, InsuranceDetailCreate, InsuranceDetailUpdate
@@ -45,11 +46,11 @@ class InsuranceClaimService:
     async def get_claims(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "submitted_date",
         descending: bool = True,
-    ) -> List[InsuranceClaim]:
+    ) -> PaginatedResponse[InsuranceClaim]:
         query = select(InsuranceClaim)
         if filters:
             if "status" in filters:
@@ -60,14 +61,32 @@ class InsuranceClaimService:
                 query = query.where(InsuranceClaim.submitted_date >= filters["submitted_date_from"])
             if "submitted_date_to" in filters:
                 query = query.where(InsuranceClaim.submitted_date <= filters["submitted_date_to"])
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Ordering
         order_col = getattr(InsuranceClaim, order_by, InsuranceClaim.submitted_date)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
-        query = query.offset(skip).limit(limit)
+
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_claim(self, data: InsuranceClaimCreate) -> InsuranceClaim:
         # Validate insurance detail exists and is active

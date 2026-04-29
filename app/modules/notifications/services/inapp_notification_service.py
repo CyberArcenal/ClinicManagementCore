@@ -4,10 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.sql import func
 
-from app.modules.notifications.models import Notification
-from app.modules.notifications.schemas import NotificationCreate, NotificationUpdate
+from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.notifications.models.inapp_notification import Notification
+from app.modules.notifications.schemas.base import NotificationCreate, NotificationUpdate
 from app.modules.user.models import User
-from app.common.exceptions import UserNotFoundError
 
 
 class InAppNotificationService:
@@ -27,15 +28,23 @@ class InAppNotificationService:
         self,
         user_id: int,
         unread_only: bool = False,
-        skip: int = 0,
-        limit: int = 50,
-    ) -> List[Notification]:
+        page: int = 1,
+        page_size: int = 50,
+    ) -> PaginatedResponse[Notification]:
         query = select(Notification).where(Notification.user_id == user_id)
         if unread_only:
             query = query.where(Notification.is_read == False)
-        query = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit)
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+        # Order and paginate
+        query = query.order_by(Notification.created_at.desc())
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(items=items, total=total, page=page, size=page_size, pages=pages)
 
     async def create_notification(self, data: NotificationCreate) -> Notification:
         # Validate user and actor exist

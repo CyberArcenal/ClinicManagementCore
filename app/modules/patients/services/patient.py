@@ -6,6 +6,7 @@ from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload, joinedload
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.patients.models.models import Patient
 from app.modules.patients.schemas.base import PatientCreate, PatientUpdate
 from app.modules.user.models import User
@@ -41,19 +42,13 @@ class PatientService:
     async def get_patients(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "id",
         descending: bool = False,
-    ) -> List[Patient]:
+    ) -> PaginatedResponse[Patient]:
         """
-        List patients with optional filters.
-        Filters can include:
-        - gender
-        - blood_type
-        - date_of_birth_from / date_of_birth_to
-        - user__full_name (via user relationship)
-        - user__email
+        List patients with pagination and optional filters.
         """
         query = select(Patient)
 
@@ -67,7 +62,6 @@ class PatientService:
             if "date_of_birth_to" in filters:
                 query = query.where(Patient.date_of_birth <= filters["date_of_birth_to"])
             if "user__full_name" in filters:
-                # join with User and filter by full_name ilike
                 query = query.join(Patient.user).where(
                     User.full_name.ilike(f"%{filters['user__full_name']}%")
                 )
@@ -76,9 +70,12 @@ class PatientService:
                     User.email.ilike(f"%{filters['user__email']}%")
                 )
 
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
         # Order by
         if order_by.startswith("user__"):
-            # handle ordering by user field
             user_field = order_by.split("__")[1]
             query = query.join(Patient.user)
             order_column = getattr(User, user_field, User.id)
@@ -89,9 +86,20 @@ class PatientService:
         else:
             query = query.order_by(order_column.asc())
 
-        query = query.offset(skip).limit(limit)
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_patient(self, data: PatientCreate) -> Patient:
         """Create a new patient record. user_id must reference an existing User."""

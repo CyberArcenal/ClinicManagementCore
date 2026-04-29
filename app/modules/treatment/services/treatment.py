@@ -5,19 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func
 from sqlalchemy.orm import selectinload
 
-from app.modules.treatment.models import Treatment
-from app.modules.treatment.schemas import TreatmentCreate, TreatmentUpdate
-from app.modules.patient.models import Patient
-from app.modules.doctor.models import DoctorProfile
-from app.modules.nurse.models import NurseProfile
-from app.modules.ehr.models import EHR
-from app.common.exceptions import (
-    PatientNotFoundError,
-    DoctorNotFoundError,
-    NurseNotFoundError,
-    EHRNotFoundError,
-    TreatmentNotFoundError,
-)
+from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
+from app.common.exceptions.ehr import EHRNotFoundError
+from app.common.exceptions.staff import NurseNotFoundError
+from app.common.exceptions.treatment import TreatmentNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.ehr.models.base import EHR
+from app.modules.patients.models.models import Patient
+from app.modules.staff.models.doctor_profile import DoctorProfile
+from app.modules.staff.models.nurse_profile import NurseProfile
+from app.modules.treatment.models.models import Treatment
+from app.modules.treatment.schemas.treatment import TreatmentCreate, TreatmentUpdate
+
 
 
 class TreatmentService:
@@ -43,11 +42,11 @@ class TreatmentService:
     async def get_treatments(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "performed_date",
         descending: bool = True,
-    ) -> List[Treatment]:
+    ) -> PaginatedResponse[Treatment]:
         query = select(Treatment)
         if filters:
             if "patient_id" in filters:
@@ -65,15 +64,31 @@ class TreatmentService:
             if "date_to" in filters:
                 query = query.where(Treatment.performed_date <= filters["date_to"])
 
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Order by
         order_col = getattr(Treatment, order_by, Treatment.performed_date)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
 
-        query = query.offset(skip).limit(limit)
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_treatment(self, data: TreatmentCreate) -> Treatment:
         # Validate patient

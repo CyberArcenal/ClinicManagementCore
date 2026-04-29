@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
+from app.common.schema.base import PaginatedResponse
 from app.modules.user.services.user import UserService
 from app.modules.user.schemas.base import Token, UserCreate, UserUpdate, UserResponse
 
@@ -129,14 +130,14 @@ async def change_password(
     return {"message": "Password changed successfully"}
 
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("/", response_model=PaginatedResponse[UserResponse])
 async def list_users(
     role: Optional[str] = Query(None),
     is_active: Optional[bool] = Query(None),
     email_contains: Optional[str] = Query(None),
     full_name_contains: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
@@ -154,8 +155,12 @@ async def list_users(
         filters["full_name_contains"] = full_name_contains
 
     service = UserService(db)
-    users = await service.get_users(filters=filters, skip=skip, limit=limit)
-    return users
+    paginated = await service.get_users(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{user_id}", response_model=UserResponse)

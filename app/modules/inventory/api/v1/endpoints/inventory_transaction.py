@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.inventory import InsufficientStockError, InventoryItemNotFoundError, InventoryTransactionNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.inventory.schemas.base import InventoryItemCreate, InventoryItemResponse, InventoryItemUpdate, InventoryTransactionCreate, InventoryTransactionResponse, InventoryTransactionUpdate
 from app.modules.inventory.services.inventory_item import InventoryItemService
 from app.modules.inventory.services.inventory_transaction import InventoryTransactionService
@@ -31,13 +32,13 @@ async def create_transaction(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[InventoryTransactionResponse])
+@router.get("/", response_model=PaginatedResponse[InventoryTransactionResponse])
 async def list_transactions(
     item_id: Optional[int] = Query(None),
     transaction_type: Optional[str] = Query(None),
     performed_by_id: Optional[int] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("pharmacist")),
 ):
@@ -50,8 +51,12 @@ async def list_transactions(
         filters["performed_by_id"] = performed_by_id
 
     service = InventoryTransactionService(db)
-    transactions = await service.get_transactions(filters=filters, skip=skip, limit=limit)
-    return transactions
+    paginated = await service.get_transactions(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{transaction_id}", response_model=InventoryTransactionResponse)

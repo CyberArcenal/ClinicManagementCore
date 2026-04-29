@@ -3,6 +3,12 @@ from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.common.api.db import get_db
+from app.common.dependencies.auth import get_current_user, require_role
+from app.common.exceptions.room import RoomNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.room.schemas.base import RoomCreate, RoomResponse, RoomUpdate
+from app.modules.room.services.room import RoomService
 from app.modules.user.models import User
 
 router = APIRouter()
@@ -25,14 +31,14 @@ async def create_room(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[RoomResponse])
+@router.get("/", response_model=PaginatedResponse[RoomResponse])
 async def list_rooms(
     room_type: Optional[str] = Query(None),
     is_available: Optional[bool] = Query(None),
     min_capacity: Optional[int] = Query(None),
     room_number_contains: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -47,8 +53,12 @@ async def list_rooms(
         filters["room_number_contains"] = room_number_contains
 
     service = RoomService(db)
-    rooms = await service.get_rooms(filters=filters, skip=skip, limit=limit)
-    return rooms
+    paginated = await service.get_rooms(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/available", response_model=List[RoomResponse])

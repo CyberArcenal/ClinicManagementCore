@@ -35,15 +35,15 @@ async def create_insurance_claim(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[InsuranceClaimResponse])
+@router.get("/", response_model=PaginatedResponse[InsuranceClaimResponse])
 async def list_insurance_claims(
     invoice_id: Optional[int] = Query(None),
     insurance_detail_id: Optional[int] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
     submitted_date_from: Optional[str] = Query(None),
     submitted_date_to: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -54,10 +54,18 @@ async def list_insurance_claims(
         filters["insurance_detail_id"] = insurance_detail_id
     if status_filter:
         filters["status"] = status_filter
-    # date parsing could be added
+    if submitted_date_from:
+        filters["submitted_date_from"] = submitted_date_from
+    if submitted_date_to:
+        filters["submitted_date_to"] = submitted_date_to
+
     service = InsuranceClaimService(db)
-    claims = await service.get_claims(filters=filters, skip=skip, limit=limit)
-    return claims
+    paginated = await service.get_claims(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{claim_id}", response_model=InsuranceClaimResponse)

@@ -1,8 +1,16 @@
 # app/modules/staff/doctor_profile_service.py
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import func, select, and_
 from sqlalchemy.orm import selectinload
+
+from app.common.exceptions.base import DoctorNotFoundError
+from app.common.exceptions.staff import DuplicateLicenseError
+from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.staff.models.doctor_profile import DoctorProfile
+from app.modules.user.models.base import User
+from app.modules.user.schemas.base import DoctorProfileCreate, DoctorProfileUpdate
 
 
 class DoctorProfileService:
@@ -34,11 +42,11 @@ class DoctorProfileService:
     async def get_doctors(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "id",
         descending: bool = False,
-    ) -> List[DoctorProfile]:
+    ) -> PaginatedResponse[DoctorProfile]:
         query = select(DoctorProfile)
         if filters:
             if "specialization" in filters:
@@ -49,14 +57,27 @@ class DoctorProfileService:
                 query = query.join(DoctorProfile.user).where(
                     User.full_name.ilike(f"%{filters['user__full_name']}%")
                 )
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
         order_col = getattr(DoctorProfile, order_by, DoctorProfile.id)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
-        query = query.offset(skip).limit(limit)
+
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_doctor(self, data: DoctorProfileCreate) -> DoctorProfile:
         # Validate user exists

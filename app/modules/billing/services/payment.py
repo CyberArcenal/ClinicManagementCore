@@ -12,6 +12,7 @@ from app.common.exceptions.billing import (
     OverpaymentError,
     InvalidPaymentAmountError,
 )
+from app.common.schema.base import PaginatedResponse
 from app.modules.billing.enums.base import InvoiceStatus, PaymentMethod
 from app.modules.billing.models.base import BillingItem, Invoice, Payment
 from app.modules.billing.schemas.base import BillingItemCreate, BillingItemUpdate, InvoiceCreate, InvoiceUpdate, PaymentCreate, PaymentUpdate
@@ -40,12 +41,13 @@ class PaymentService:
         )
         return result.scalars().all()
 
+
     async def get_payments(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> List[Payment]:
+        page: int = 1,
+        page_size: int = 100,
+    ) -> PaginatedResponse[Payment]:
         query = select(Payment)
         if filters:
             if "invoice_id" in filters:
@@ -56,9 +58,25 @@ class PaymentService:
                 query = query.where(Payment.payment_date >= filters["date_from"])
             if "date_to" in filters:
                 query = query.where(Payment.payment_date <= filters["date_to"])
-        query = query.order_by(Payment.payment_date.desc()).offset(skip).limit(limit)
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        query = query.order_by(Payment.payment_date.desc())
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_payment(self, data: PaymentCreate) -> Payment:
         # Validate invoice exists

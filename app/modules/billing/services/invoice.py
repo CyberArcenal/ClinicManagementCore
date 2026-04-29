@@ -13,6 +13,7 @@ from app.common.exceptions.billing import (
     OverpaymentError,
     InvalidPaymentAmountError,
 )
+from app.common.schema.base import PaginatedResponse
 from app.modules.billing.enums.base import InvoiceStatus, PaymentMethod
 from app.modules.billing.models.base import BillingItem, Invoice, Payment
 from app.modules.billing.schemas.base import BillingItemCreate, BillingItemUpdate, InvoiceCreate, InvoiceUpdate, PaymentCreate, PaymentUpdate
@@ -44,14 +45,18 @@ class InvoiceService:
         )
         return result.scalar_one_or_none()
 
+
     async def get_invoices(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "issue_date",
         descending: bool = True,
-    ) -> List[Invoice]:
+    ) -> PaginatedResponse[Invoice]:
+        """
+        List invoices with pagination (page/page_size) and optional filters.
+        """
         query = select(Invoice)
         if filters:
             if "patient_id" in filters:
@@ -62,14 +67,32 @@ class InvoiceService:
                 query = query.where(Invoice.issue_date >= filters["date_from"])
             if "date_to" in filters:
                 query = query.where(Invoice.issue_date <= filters["date_to"])
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Ordering
         order_col = getattr(Invoice, order_by, Invoice.issue_date)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
-        query = query.offset(skip).limit(limit)
+
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_invoice(self, data: InvoiceCreate) -> Invoice:
         # Validate patient exists
@@ -153,10 +176,10 @@ class InvoiceService:
         if total_paid >= invoice.total:
             invoice.status = InvoiceStatus.PAID
         elif total_paid > 0:
-            invoice.status = InvoiceStatus.PARTIALLY_PAID
+            invoice.status = InvoiceStatus.PARTIAL
         else:
             # Keep current status if no payment, but don't override DRAFT/SENT
-            if invoice.status in [InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]:
+            if invoice.status in [InvoiceStatus.PAID, InvoiceStatus.PARTIAL]:
                 invoice.status = InvoiceStatus.SENT
         await self.db.commit()
         await self.db.refresh(invoice)

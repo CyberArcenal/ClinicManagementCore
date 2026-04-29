@@ -1,11 +1,13 @@
 # app/modules/notifications/email_template_service.py
 from typing import List, Optional, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select
 
-from app.modules.notifications.models import EmailTemplate
-from app.modules.notifications.schemas import EmailTemplateCreate, EmailTemplateUpdate
-from app.common.exceptions import TemplateNotFoundError
+from app.common.exceptions.notification import TemplateNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.notifications.models.email_template import EmailTemplate
+from app.modules.notifications.schemas.base import EmailTemplateCreate, EmailTemplateUpdate
+
 
 
 class EmailTemplateService:
@@ -28,12 +30,19 @@ class EmailTemplateService:
         return result.scalar_one_or_none()
 
     async def get_templates(
-        self, skip: int = 0, limit: int = 100
-    ) -> List[EmailTemplate]:
-        result = await self.db.execute(
-            select(EmailTemplate).offset(skip).limit(limit)
-        )
-        return result.scalars().all()
+        self,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> PaginatedResponse[EmailTemplate]:
+        query = select(EmailTemplate)
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
+        result = await self.db.execute(query)
+        items = result.scalars().all()
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(items=items, total=total, page=page, size=page_size, pages=pages)
 
     async def create_template(self, data: EmailTemplateCreate) -> EmailTemplate:
         template = EmailTemplate(
@@ -90,3 +99,15 @@ class EmailTemplateService:
         if not template:
             raise TemplateNotFoundError(f"Template '{name}' not found")
         return self.render_template(template, context)
+    
+    def get_template_by_name_sync(self, name: str):
+        return self.db.query(EmailTemplate).filter(EmailTemplate.name == name).first()
+
+    def render_template_sync(self, template: EmailTemplate, context: dict) -> tuple:
+        # Simple Jinja2-like replacement, or use Jinja2 if installed
+        subject = template.subject
+        content = template.content
+        for key, value in context.items():
+            subject = subject.replace(f"{{{{ {key} }}}}", str(value))
+            content = content.replace(f"{{{{ {key} }}}}", str(value))
+        return subject, content

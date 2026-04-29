@@ -3,6 +3,11 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import require_role
+from app.common.schema.base import PaginatedResponse
+from app.modules.notifications.schemas.base import EmailTemplateCreate, EmailTemplateResponse
+from app.modules.notifications.services.email_template_service import EmailTemplateService
 from app.modules.user.models import User
 
 router = APIRouter()
@@ -19,16 +24,16 @@ async def create_email_template(
     return template
 
 
-@router.get("/", response_model=List[EmailTemplateResponse])
+@router.get("/", response_model=PaginatedResponse[EmailTemplateResponse])
 async def list_email_templates(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
     service = EmailTemplateService(db)
-    templates = await service.get_templates(skip=skip, limit=limit)
-    return templates
+    paginated = await service.get_templates(page=page, page_size=page_size)
+    return paginated
 
 
 @router.get("/{template_id}", response_model=EmailTemplateResponse)

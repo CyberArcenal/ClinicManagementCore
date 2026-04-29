@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func
 from app.common.exceptions.report_log import ReportLogNotFoundError
 from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.reports.models.models import ReportLog
 from app.modules.reports.schemas.base import ReportLogCreate, ReportLogUpdate
 from app.modules.user.models import User
@@ -26,11 +27,11 @@ class ReportLogService:
     async def get_report_logs(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "generated_at",
         descending: bool = True,
-    ) -> List[ReportLog]:
+    ) -> PaginatedResponse[ReportLog]:
         query = select(ReportLog)
         if filters:
             if "report_name" in filters:
@@ -44,15 +45,31 @@ class ReportLogService:
             if "file_path_contains" in filters:
                 query = query.where(ReportLog.file_path.ilike(f"%{filters['file_path_contains']}%"))
 
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Order by
         order_col = getattr(ReportLog, order_by, ReportLog.generated_at)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
 
-        query = query.offset(skip).limit(limit)
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_report_log(self, data: ReportLogCreate) -> ReportLog:
         # Validate user exists if generated_by_id provided

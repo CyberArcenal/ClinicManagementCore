@@ -2,7 +2,8 @@
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, update
+from sqlalchemy import func, select, and_, update
+from app.common.schema.base import PaginatedResponse
 from app.modules.notifications.enums.base import NotifyStatus
 from app.modules.notifications.models.notify_log import NotifyLog
 from app.modules.notifications.schemas.base import NotifyLogCreate, NotifyLogUpdate
@@ -24,11 +25,11 @@ class NotifyLogService:
     async def get_logs(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "created_at",
         descending: bool = True,
-    ) -> List[NotifyLog]:
+    ) -> PaginatedResponse[NotifyLog]:
         query = select(NotifyLog)
         if filters:
             if "status" in filters:
@@ -39,15 +40,22 @@ class NotifyLogService:
                 query = query.where(NotifyLog.recipient_email == filters["recipient_email"])
             if "type" in filters:
                 query = query.where(NotifyLog.type == filters["type"])
-        # ordering
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+        # Ordering
         order_col = getattr(NotifyLog, order_by, NotifyLog.created_at)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
-        query = query.offset(skip).limit(limit)
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(items=items, total=total, page=page, size=page_size, pages=pages)
 
     async def create_log(self, data: NotifyLogCreate) -> NotifyLog:
         log = NotifyLog(

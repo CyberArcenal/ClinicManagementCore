@@ -5,6 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import get_current_user, require_role
+from app.common.exceptions.base import DoctorNotFoundError
+from app.common.exceptions.schedule import ScheduleConflictError, ScheduleNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.schedule.enums.base import WeekDay
+from app.modules.schedule.schema.schedule import DoctorScheduleCreate, DoctorScheduleResponse, DoctorScheduleUpdate
+from app.modules.schedule.services.schedule import ScheduleService
 from app.modules.user.models import User
 
 
@@ -64,13 +72,13 @@ async def create_weekly_schedule(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/", response_model=List[DoctorScheduleResponse])
+@router.get("/", response_model=PaginatedResponse[DoctorScheduleResponse])
 async def list_schedules(
     doctor_id: Optional[int] = Query(None),
-    day_of_week: Optional[WeekDayEnum] = Query(None),
+    day_of_week: Optional[WeekDay] = Query(None),
     is_available: Optional[bool] = Query(True),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -83,8 +91,12 @@ async def list_schedules(
         filters["is_available"] = is_available
 
     service = ScheduleService(db)
-    schedules = await service.get_schedules(filters=filters, skip=skip, limit=limit)
-    return schedules
+    paginated = await service.get_schedules(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/doctor/{doctor_id}", response_model=List[DoctorScheduleResponse])

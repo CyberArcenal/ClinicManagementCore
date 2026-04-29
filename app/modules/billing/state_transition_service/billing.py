@@ -1,8 +1,8 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from app.core.state_transition.base import BaseStateTransition
-from app.modules.billing.models import Invoice, BillingItem, Payment
+from app.common.state_transition.base import BaseStateTransition
 from app.modules.billing.enums.base import InvoiceStatus
+from app.modules.billing.models.base import BillingItem, Invoice, Payment
 
 class BillingInvoiceTransition(BaseStateTransition[Invoice]):
 

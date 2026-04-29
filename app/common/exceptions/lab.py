@@ -6,3 +6,6 @@ class LabTechNotFoundError(ClinicException):
 
 class InvalidLabStatusTransitionError(ClinicException):
     pass
+
+class LabResultNotFoundError(ClinicException):
+    pass

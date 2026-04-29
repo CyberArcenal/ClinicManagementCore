@@ -2,10 +2,11 @@
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, update, delete
+from sqlalchemy import func, select, and_, or_, update, delete
 from sqlalchemy.orm import selectinload
 
 from app.common.exceptions.base import AppointmentConflictError, DoctorNotFoundError, DoctorUnavailableError, InvalidStatusTransitionError, PatientNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.appointment.enums.base import AppointmentStatus
 from app.modules.appointment.models.base import Appointment
 from app.modules.appointment.schemas.base import AppointmentCreate, AppointmentUpdate
@@ -35,19 +36,20 @@ class AppointmentService:
         return result.scalar_one_or_none()
 
     async def get_appointments(
-        self,
-        filters: Dict[str, Any] = None,
-        skip: int = 0,
-        limit: int = 100,
-        order_by: str = "appointment_datetime",
-        descending: bool = False,
-    ) -> List[Appointment]:
+    self,
+    filters: Dict[str, Any] = None,
+    page: int = 1,
+    page_size: int = 100,
+    order_by: str = "appointment_datetime",
+    descending: bool = False,
+) -> PaginatedResponse[Appointment]:
         """
-        List appointments with optional filters.
-        Filters can include: patient_id, doctor_id, status, date_from, date_to.
+        List appointments with optional filters, paginated by page/page_size.
         """
+        # Base query
         query = select(Appointment)
 
+        # Apply filters (same as before)
         if filters:
             if "patient_id" in filters:
                 query = query.where(Appointment.patient_id == filters["patient_id"])
@@ -60,16 +62,34 @@ class AppointmentService:
             if "date_to" in filters:
                 query = query.where(Appointment.appointment_datetime <= filters["date_to"])
 
-        # Order by
+        # Count total (before pagination)
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Apply ordering
         order_column = getattr(Appointment, order_by, Appointment.appointment_datetime)
         if descending:
             query = query.order_by(order_column.desc())
         else:
             query = query.order_by(order_column.asc())
 
-        query = query.offset(skip).limit(limit)
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
+
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        # Calculate total pages
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_appointment(
         self, data: AppointmentCreate, created_by_id: Optional[int] = None

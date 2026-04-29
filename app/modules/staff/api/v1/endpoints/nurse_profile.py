@@ -1,10 +1,18 @@
 # app/modules/staff/api/v1/endpoints/nurse_profile.py
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.params import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import get_current_user, require_role
+from app.common.exceptions.staff import DuplicateLicenseError, NurseNotFoundError
+from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.staff.services.nurse_profile import NurseProfileService
 from app.modules.user.models import User
+from app.modules.user.schemas.base import NurseProfileCreate, NurseProfileResponse, NurseProfileUpdate
 
 router = APIRouter()
 
@@ -23,16 +31,16 @@ async def create_nurse_profile(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[NurseProfileResponse])
+@router.get("/", response_model=PaginatedResponse[NurseProfileResponse])
 async def list_nurse_profiles(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     service = NurseProfileService(db)
-    nurses = await service.get_nurses(skip=skip, limit=limit)
-    return nurses
+    paginated = await service.get_nurses(page=page, page_size=page_size)
+    return paginated
 
 
 @router.get("/{nurse_id}", response_model=NurseProfileResponse)

@@ -7,6 +7,7 @@ class InvoiceStatus(str, enum.Enum):
     PARTIAL = "partial"
     OVERDUE = "overdue"
     CANCELLED = "cancelled"
+    
 
 class PaymentMethod(str, enum.Enum):
     CASH = "cash"

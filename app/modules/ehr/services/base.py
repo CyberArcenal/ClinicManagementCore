@@ -1,14 +1,15 @@
 # app/modules/ehr/service.py
 from datetime import datetime
 from typing import List, Optional, Dict, Any
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.ehr.models.base import EHR
 from app.modules.ehr.schemas.base import EHRCreate, EHRUpdate
 from app.modules.patients.models.models import Patient
 from app.modules.staff.models.doctor_profile import DoctorProfile
-from sqlchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 
 
@@ -38,14 +39,13 @@ class EHRService:
     async def get_ehr_records(
         self,
         filters: Dict[str, Any] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "visit_date",
         descending: bool = True,
-    ) -> List[EHR]:
+    ) -> PaginatedResponse[EHR]:
         """
-        List EHR records with filters.
-        Filters can include: patient_id, doctor_id, date_from, date_to, diagnosis_contains.
+        List EHR records with filters, paginated by page/page_size.
         """
         query = select(EHR)
 
@@ -63,6 +63,10 @@ class EHRService:
             if "symptoms_contains" in filters:
                 query = query.where(EHR.symptoms.ilike(f"%{filters['symptoms_contains']}%"))
 
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
         # Order by
         order_column = getattr(EHR, order_by, EHR.visit_date)
         if descending:
@@ -70,9 +74,20 @@ class EHRService:
         else:
             query = query.order_by(order_column.asc())
 
-        query = query.offset(skip).limit(limit)
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_ehr(self, data: EHRCreate) -> EHR:
         """Create a new EHR record."""

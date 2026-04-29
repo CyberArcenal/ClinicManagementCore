@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
 from app.common.exceptions.inventory import InsufficientStockError, InventoryItemNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.inventory.models.models import InventoryItem, InventoryTransaction
 from app.modules.inventory.schemas.base import InventoryItemCreate, InventoryItemUpdate
-from sqlchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 
 class InventoryItemService:
@@ -33,11 +33,14 @@ class InventoryItemService:
     async def get_items(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "name",
         descending: bool = False,
-    ) -> List[InventoryItem]:
+    ) -> PaginatedResponse[InventoryItem]:
+        """
+        List inventory items with pagination.
+        """
         query = select(InventoryItem)
         if filters:
             if "category" in filters:
@@ -50,14 +53,32 @@ class InventoryItemService:
                 query = query.where(InventoryItem.quantity_on_hand <= InventoryItem.reorder_level)
             if "expired_only" in filters and filters["expired_only"]:
                 query = query.where(InventoryItem.expiry_date < datetime.utcnow())
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Order by
         order_col = getattr(InventoryItem, order_by, InventoryItem.name)
         if descending:
             query = query.order_by(order_col.desc())
         else:
             query = query.order_by(order_col.asc())
-        query = query.offset(skip).limit(limit)
+
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_item(self, data: InventoryItemCreate) -> InventoryItem:
         if data.sku:
@@ -145,6 +166,9 @@ class InventoryItemService:
         await self.db.commit()
         await self.db.refresh(item)
         return item
+    
+    def get_item_by_name_sync(self, name: str) -> Optional[InventoryItem]:
+        return self.db.query(InventoryItem).filter(InventoryItem.name == name).first()
 
     async def adjust_stock(
         self,

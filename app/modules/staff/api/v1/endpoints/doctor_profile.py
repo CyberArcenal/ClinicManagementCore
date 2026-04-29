@@ -3,7 +3,15 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import get_current_user, require_role
+from app.common.exceptions.base import DoctorNotFoundError
+from app.common.exceptions.staff import DuplicateLicenseError
+from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.staff.services.doctor_profile import DoctorProfileService
 from app.modules.user.models import User
+from app.modules.user.schemas.base import DoctorProfileCreate, DoctorProfileResponse, DoctorProfileUpdate
 
 
 router = APIRouter()
@@ -23,13 +31,13 @@ async def create_doctor_profile(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[DoctorProfileResponse])
+@router.get("/", response_model=PaginatedResponse[DoctorProfileResponse])
 async def list_doctor_profiles(
     specialization: Optional[str] = Query(None),
     min_experience: Optional[int] = Query(None),
     name: Optional[str] = Query(None, description="Search by user full name"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -41,8 +49,12 @@ async def list_doctor_profiles(
     if name:
         filters["user__full_name"] = name
     service = DoctorProfileService(db)
-    doctors = await service.get_doctors(filters=filters, skip=skip, limit=limit)
-    return doctors
+    paginated = await service.get_doctors(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{doctor_id}", response_model=DoctorProfileResponse)

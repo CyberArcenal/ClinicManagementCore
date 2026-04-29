@@ -1,7 +1,18 @@
 # app/modules/staff/receptionist_profile_service.py
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select, and_
+from sqlalchemy.orm import selectinload
+
+from app.common.exceptions.base import DoctorNotFoundError
+from app.common.exceptions.staff import DuplicateLicenseError, ReceptionistNotFoundError
+from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.staff.models.doctor_profile import DoctorProfile
+from app.modules.staff.models.receptionist_profile import ReceptionistProfile
+from app.modules.user.models.base import User
+from app.modules.user.schemas.base import DoctorProfileCreate, DoctorProfileUpdate, ReceptionistProfileCreate, ReceptionistProfileUpdate
+
 
 class ReceptionistProfileService:
     def __init__(self, db: AsyncSession):
@@ -19,10 +30,26 @@ class ReceptionistProfileService:
         )
         return result.scalar_one_or_none()
 
-    async def get_all_receptionists(self, skip: int = 0, limit: int = 100) -> List[ReceptionistProfile]:
-        query = select(ReceptionistProfile).offset(skip).limit(limit)
+    async def get_all_receptionists(
+        self,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> PaginatedResponse[ReceptionistProfile]:
+        query = select(ReceptionistProfile)
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_receptionist(self, data: ReceptionistProfileCreate) -> ReceptionistProfile:
         user = await self.db.get(User, data.user_id)

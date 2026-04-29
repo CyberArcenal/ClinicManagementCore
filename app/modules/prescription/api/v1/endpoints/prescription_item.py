@@ -1,9 +1,21 @@
 # app/modules/prescription/api/v1/endpoints/prescription_item.py
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.modules.user.models import User
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import get_current_user, require_role
+from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
+from app.common.exceptions.ehr import EHRNotFoundError
+from app.common.exceptions.prescription import PrescriptionItemNotFoundError, PrescriptionNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.patients.models.models import Patient
+from app.modules.prescription.schemas.base import PrescriptionCreate, PrescriptionItemCreate, PrescriptionItemResponse, PrescriptionItemUpdate, PrescriptionResponse, PrescriptionUpdate
+from app.modules.prescription.services.prescription import PrescriptionService
+from app.modules.prescription.services.prescription_item import PrescriptionItemService
+from app.modules.staff.models.doctor_profile import DoctorProfile
+from app.modules.user.models.base import User
 
 router = APIRouter()
 

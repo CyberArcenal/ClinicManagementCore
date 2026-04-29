@@ -2,20 +2,16 @@
 from datetime import datetime, time, timedelta, date
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, delete
+from sqlalchemy import func, select, and_, delete
 
-from app.modules.schedule.models import DoctorSchedule, WeekDay
-from app.modules.schedule.schemas import (
-    DoctorScheduleCreate,
-    DoctorScheduleUpdate,
-    WeekDayEnum,
-)
-from app.modules.doctor.models import DoctorProfile
-from app.common.exceptions import (
-    DoctorNotFoundError,
-    ScheduleNotFoundError,
-    ScheduleConflictError,
-)
+from app.common.exceptions.base import DoctorNotFoundError
+from app.common.exceptions.schedule import ScheduleConflictError, ScheduleNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.schedule.enums.base import WeekDay
+from app.modules.schedule.models.schedule import DoctorSchedule
+from app.modules.schedule.schema.schedule import DoctorScheduleCreate, DoctorScheduleUpdate
+from app.modules.staff.models.doctor_profile import DoctorProfile
+
 
 
 class ScheduleService:
@@ -44,9 +40,9 @@ class ScheduleService:
     async def get_schedules(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> List[DoctorSchedule]:
+        page: int = 1,
+        page_size: int = 100,
+    ) -> PaginatedResponse[DoctorSchedule]:
         query = select(DoctorSchedule)
         if filters:
             if "doctor_id" in filters:
@@ -55,9 +51,25 @@ class ScheduleService:
                 query = query.where(DoctorSchedule.day_of_week == filters["day_of_week"])
             if "is_available" in filters:
                 query = query.where(DoctorSchedule.is_available == filters["is_available"])
-        query = query.offset(skip).limit(limit)
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_schedule(self, data: DoctorScheduleCreate) -> DoctorSchedule:
         # Check if doctor exists

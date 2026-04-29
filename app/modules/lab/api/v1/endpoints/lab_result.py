@@ -4,6 +4,19 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import get_current_user, require_role
+from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
+from app.common.exceptions.ehr import EHRNotFoundError
+from app.common.exceptions.lab import InvalidLabStatusTransitionError, LabTechNotFoundError, LabResultNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.lab.models.models import LabStatus
+from app.modules.lab.schemas.base import LabResultCreate, LabResultResponse, LabResultUpdate
+from app.modules.lab.services.base import LabService
+from app.modules.patients.models.models import Patient
+from app.modules.staff.models.doctor_profile import DoctorProfile
+from app.modules.user.models.base import User
+
 
 router = APIRouter()
 
@@ -26,7 +39,8 @@ async def create_lab_request(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/", response_model=List[LabResultResponse])
+
+@router.get("/", response_model=PaginatedResponse[LabResultResponse])
 async def list_lab_results(
     patient_id: Optional[int] = Query(None),
     doctor_id: Optional[int] = Query(None),
@@ -34,8 +48,8 @@ async def list_lab_results(
     test_name_contains: Optional[str] = Query(None),
     date_from: Optional[datetime] = Query(None),
     date_to: Optional[datetime] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -54,27 +68,32 @@ async def list_lab_results(
         filters["date_to"] = date_to
 
     service = LabService(db)
-    results = await service.get_lab_results(filters=filters, skip=skip, limit=limit)
+    paginated = await service.get_lab_results(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
 
-    # Role-based filtering
+    # Role-based filtering (applied to items list)
+    items = paginated.items
     if current_user.role == "patient":
-        # Patient sees only their own records
-        from app.modules.patient.models import Patient
         patient_record = await service.db.get(Patient, {"user_id": current_user.id})
         if patient_record:
-            results = [r for r in results if r.patient_id == patient_record.id]
+            items = [r for r in items if r.patient_id == patient_record.id]
         else:
-            results = []
+            items = []
     elif current_user.role == "doctor":
-        from app.modules.doctor.models import DoctorProfile
         doctor_profile = await service.db.get(DoctorProfile, {"user_id": current_user.id})
         if doctor_profile:
-            results = [r for r in results if r.requested_by_id == doctor_profile.id]
+            items = [r for r in items if r.requested_by_id == doctor_profile.id]
         else:
-            results = []
-    # Lab tech sees all? Could add filter for performed_by, but let's keep simple
+            items = []
 
-    return results
+    # Update pagination object with filtered items
+    paginated.items = items
+    paginated.total = len(items)
+    paginated.pages = (paginated.total + page_size - 1) // page_size if paginated.total > 0 else 0
+    return paginated
 
 
 @router.get("/{lab_id}", response_model=LabResultResponse)
@@ -89,12 +108,10 @@ async def get_lab_result(
         raise HTTPException(status_code=404, detail="Lab result not found")
     # Authorization check
     if current_user.role == "patient":
-        from app.modules.patient.models import Patient
         patient_record = await service.db.get(Patient, {"user_id": current_user.id})
         if not patient_record or lab.patient_id != patient_record.id:
             raise HTTPException(status_code=403, detail="Access denied")
     elif current_user.role == "doctor":
-        from app.modules.doctor.models import DoctorProfile
         doctor_profile = await service.db.get(DoctorProfile, {"user_id": current_user.id})
         if not doctor_profile or lab.requested_by_id != doctor_profile.id:
             raise HTTPException(status_code=403, detail="Access denied")
@@ -199,7 +216,6 @@ async def get_patient_lab_history(
     service = LabService(db)
     # Authorization: patient sees own, doctor sees any, admin sees any
     if current_user.role == "patient":
-        from app.modules.patient.models import Patient
         patient_record = await service.db.get(Patient, {"user_id": current_user.id})
         if not patient_record or patient_record.id != patient_id:
             raise HTTPException(status_code=403, detail="Access denied")

@@ -8,6 +8,7 @@ from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.ehr.schemas.base import EHRCreate, EHRResponse, EHRUpdate
 from app.modules.ehr.services.base import EHRService
 from app.modules.patients.models.models import Patient
@@ -36,24 +37,19 @@ async def create_ehr_record(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/", response_model=List[EHRResponse])
+
+@router.get("/", response_model=PaginatedResponse[EHRResponse])
 async def list_ehr_records(
     patient_id: Optional[int] = Query(None),
     doctor_id: Optional[int] = Query(None),
     date_from: Optional[datetime] = Query(None),
     date_to: Optional[datetime] = Query(None),
     diagnosis_contains: Optional[str] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    List EHR records with filters.
-    - Admins see all
-    - Doctors see their own + patients they treated
-    - Patients see only their own records (filtered later)
-    """
     filters = {}
     if patient_id:
         filters["patient_id"] = patient_id
@@ -67,24 +63,33 @@ async def list_ehr_records(
         filters["diagnosis_contains"] = diagnosis_contains
 
     service = EHRService(db)
-    ehrs = await service.get_ehr_records(filters=filters, skip=skip, limit=limit)
+    paginated = await service.get_ehr_records(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
 
-    # Role-based filtering
+    # Role-based filtering (still applied to the items list)
+    items = paginated.items
     if current_user.role == "patient":
-        # Patient sees only their own records
         patient_record = await service.db.get(Patient, {"user_id": current_user.id})
         if patient_record:
-            ehrs = [e for e in ehrs if e.patient_id == patient_record.id]
+            items = [e for e in items if e.patient_id == patient_record.id]
         else:
-            ehrs = []
+            items = []
     elif current_user.role == "doctor":
         doctor_profile = await service.db.get(DoctorProfile, {"user_id": current_user.id})
         if doctor_profile:
-            ehrs = [e for e in ehrs if e.doctor_id == doctor_profile.id]
+            items = [e for e in items if e.doctor_id == doctor_profile.id]
         else:
-            ehrs = []
+            items = []
 
-    return ehrs
+    # Return new paginated object with filtered items and recalculated total? 
+    # Best to keep original pagination but update the items. We'll replace items and adjust total/pages accordingly.
+    paginated.items = items
+    paginated.total = len(items)
+    paginated.pages = (paginated.total + page_size - 1) // page_size if paginated.total > 0 else 0
+    return paginated
 
 
 @router.get("/{ehr_id}", response_model=EHRResponse)

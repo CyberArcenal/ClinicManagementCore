@@ -8,12 +8,13 @@ from sqlalchemy.orm import selectinload
 from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
 from app.common.exceptions.lab import InvalidLabStatusTransitionError, LabTechNotFoundError
+from app.common.schema.base import PaginatedResponse
 from app.modules.ehr.models.base import EHR
 from app.modules.lab.models.models import LabResult, LabStatus
 from app.modules.lab.schemas.base import LabResultCreate, LabResultUpdate
 from app.modules.patients.models.models import Patient
-from app.modules.user.labtech_profile import LabTechProfile
-from app.modules.user.models.doctor_profile import DoctorProfile
+from app.modules.staff.models.doctor_profile import DoctorProfile
+from app.modules.staff.models.labtech_profile import LabTechProfile
 
 class LabService:
     def __init__(self, db: AsyncSession):
@@ -39,11 +40,14 @@ class LabService:
     async def get_lab_results(
         self,
         filters: Dict[str, Any] = None,
-        skip: int = 0,
-        limit: int = 100,
+        page: int = 1,
+        page_size: int = 100,
         order_by: str = "requested_date",
         descending: bool = True,
-    ) -> List[LabResult]:
+    ) -> PaginatedResponse[LabResult]:
+        """
+        List lab results with pagination (page/page_size) and optional filters.
+        """
         query = select(LabResult)
         if filters:
             if "patient_id" in filters:
@@ -59,15 +63,31 @@ class LabService:
             if "date_to" in filters:
                 query = query.where(LabResult.requested_date <= filters["date_to"])
 
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.db.scalar(count_query)
+
+        # Order by
         order_column = getattr(LabResult, order_by, LabResult.requested_date)
         if descending:
             query = query.order_by(order_column.desc())
         else:
             query = query.order_by(order_column.asc())
 
-        query = query.offset(skip).limit(limit)
+        # Pagination
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
         result = await self.db.execute(query)
-        return result.scalars().all()
+        items = result.scalars().all()
+
+        pages = (total + page_size - 1) // page_size if total > 0 else 0
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=page_size,
+            pages=pages
+        )
 
     async def create_lab_request(self, data: LabResultCreate) -> LabResult:
         """Create a new lab request (status = PENDING)."""

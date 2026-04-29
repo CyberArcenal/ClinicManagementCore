@@ -4,6 +4,13 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.api.db import get_db
+from app.common.dependencies.auth import require_role
+from app.common.exceptions.report_log import ReportLogNotFoundError
+from app.common.exceptions.user import UserNotFoundError
+from app.common.schema.base import PaginatedResponse
+from app.modules.reports.schemas.base import ReportLogCreate, ReportLogResponse, ReportLogUpdate
+from app.modules.reports.services.base import ReportLogService
 from app.modules.user.models import User
 
 router = APIRouter()
@@ -27,14 +34,14 @@ async def create_report_log(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/", response_model=List[ReportLogResponse])
+@router.get("/", response_model=PaginatedResponse[ReportLogResponse])
 async def list_report_logs(
     report_name: Optional[str] = Query(None),
     generated_by_id: Optional[int] = Query(None),
     date_from: Optional[datetime] = Query(None),
     date_to: Optional[datetime] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
@@ -49,8 +56,12 @@ async def list_report_logs(
         filters["date_to"] = date_to
 
     service = ReportLogService(db)
-    logs = await service.get_report_logs(filters=filters, skip=skip, limit=limit)
-    return logs
+    paginated = await service.get_report_logs(
+        filters=filters,
+        page=page,
+        page_size=page_size
+    )
+    return paginated
 
 
 @router.get("/{log_id}", response_model=ReportLogResponse)
