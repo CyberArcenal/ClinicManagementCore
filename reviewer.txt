@@ -1,0 +1,156 @@
+## 📋 Reviewer of Commands Used in ClinicManagementCore Backend
+
+Below is a comprehensive list of commands used throughout the development of this project, organized by category. These include environment setup, dependency management, database migrations, running the server, testing, seeding data, and Docker.
+
+---
+
+### 1. **Project Setup & Environment**
+
+| Command | Purpose |
+|---------|---------|
+| `git clone <repo-url>` | Clone the repository |
+| `cd ClinicManagementCore` | Enter project directory |
+| `python -m venv venv` | Create virtual environment |
+| `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows) | Activate virtual environment |
+| `pip install -r requirements.txt` | Install dependencies |
+
+---
+
+### 2. **Environment Variables (.env)**
+
+| Command / File | Purpose |
+|----------------|---------|
+| Create `.env` file | Store sensitive configuration |
+| `DATABASE_URL=postgresql+asyncpg://...` | Async PostgreSQL URL |
+| `DATABASE_URL=sqlite+aiosqlite:///./clinic.db` | Async SQLite URL (development) |
+| `SECRET_KEY=...` | JWT secret key |
+| `ALGORITHM=HS256` | JWT algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES=30` | Token expiry |
+| `ENV=development` | Environment flag |
+
+---
+
+### 3. **Database Migrations (Alembic)**
+
+| Command | Purpose |
+|---------|---------|
+| `alembic init alembic` | Initialize Alembic (creates `alembic/` folder and `alembic.ini`) |
+| `alembic revision --autogenerate -m "initial"` | Generate migration script from models |
+| `alembic upgrade head` | Apply all migrations |
+| `alembic downgrade base` | Revert all migrations (if needed) |
+
+---
+
+### 4. **Running the FastAPI Application**
+
+| Command | Purpose |
+|---------|---------|
+| `uvicorn app.main:app --reload` | Run development server with auto‑reload |
+| `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000` | Run with custom host/port |
+| `uvicorn app.main:app --reload --log-level debug` | Run with debug logging |
+
+---
+
+### 5. **Testing (pytest)**
+
+| Command | Purpose |
+|---------|---------|
+| `pytest` | Run all tests (discovered in `tests/` and module‑level `test/` folders) |
+| `pytest app/modules/appointment/test/` | Run tests for a specific module |
+| `pytest -v` | Verbose output |
+| `pytest --cov=app` | Run tests with coverage report |
+| `pytest --cov=app --cov-report=html` | Generate HTML coverage report |
+
+---
+
+### 6. **Seeding Development Data**
+
+| Command | Purpose |
+|---------|---------|
+| `python scripts/seed_dev_data.py` | Seed templates, users, sample data |
+| `python scripts/seed_templates.py` | Seed only email templates (if separate) |
+
+*(Note: The seed script requires the `app` module to be importable – ensure `PYTHONPATH=.` or run from project root.)*
+
+---
+
+### 7. **Docker & Docker Compose**
+
+| Command | Purpose |
+|---------|---------|
+| `docker-compose up --build` | Build and start all services (API, PostgreSQL, pgAdmin) |
+| `docker-compose up -d` | Run in detached mode |
+| `docker-compose down` | Stop and remove containers |
+| `docker-compose exec api alembic upgrade head` | Run migrations inside the API container |
+| `docker-compose exec api python scripts/seed_dev_data.py` | Seed data inside the container |
+| `docker-compose logs -f api` | Follow API logs |
+
+---
+
+### 8. **Python Package Management**
+
+| Command | Purpose |
+|---------|---------|
+| `pip freeze > requirements.txt` | Generate requirements file |
+| `pip install aiosqlite` | Install async SQLite driver |
+| `pip install email-validator` | Install email validator (for Pydantic) |
+| `pip install pytest pytest-asyncio pytest-cov` | Install testing tools |
+| `pip install black` | Install code formatter (used by Alembic hook) |
+
+---
+
+### 9. **Git Commands (basic)**
+
+| Command | Purpose |
+|---------|---------|
+| `git status` | Check changes |
+| `git add .` | Stage all changes |
+| `git commit -m "message"` | Commit changes |
+| `git push origin main` | Push to remote |
+
+---
+
+### 10. **Development Utilities**
+
+| Command | Purpose |
+|---------|---------|
+| `python -c "import app; print('OK')"` | Quick import test |
+| `python scripts/check_models.py` | (Custom) Verify model imports |
+| `alembic current` | Show current migration revision |
+| `alembic history` | Show migration history |
+
+---
+
+### 11. **Troubleshooting / Debugging**
+
+| Command | Purpose |
+|---------|---------|
+| `$env:PYTHONPATH = "."` (Windows PowerShell) | Set Python path to current directory |
+| `export PYTHONPATH=.` (Linux/Mac) | Set Python path |
+| `python -m app.main` | Run app as module (alternative to uvicorn) |
+
+---
+
+### 12. **Dependencies Required (from `requirements.txt`)**
+
+```
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+asyncpg               # for PostgreSQL
+aiosqlite             # for SQLite async
+pydantic[email]
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+email-validator
+```
+
+---
+
+> **Note:** All commands assume you are in the **project root** (`ClinicManagementCore/`) unless otherwise stated. The seed scripts and migration commands require the virtual environment to be activated and the `DATABASE_URL` correctly set in `.env`.
