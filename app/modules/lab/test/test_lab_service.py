@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
 from app.common.exceptions.lab import InvalidLabStatusTransitionError
-from app.modules.lab.models.models import LabResult, LabStatus
+from app.modules.lab.models.lab import LabResult, LabStatus
 from app.modules.lab.schemas.base import LabResultCreate, LabResultUpdate
 from app.modules.lab.services.base import LabService
 

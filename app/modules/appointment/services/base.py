@@ -8,9 +8,9 @@ from sqlalchemy.orm import selectinload
 from app.common.exceptions.base import AppointmentConflictError, DoctorNotFoundError, DoctorUnavailableError, InvalidStatusTransitionError, PatientNotFoundError
 from app.common.schema.base import PaginatedResponse
 from app.modules.appointment.enums.base import AppointmentStatus
-from app.modules.appointment.models.base import Appointment
+from app.modules.appointment.models.appointment import Appointment
 from app.modules.appointment.schemas.base import AppointmentCreate, AppointmentUpdate
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 from app.modules.staff.models.doctor_profile import DoctorProfile
 
 

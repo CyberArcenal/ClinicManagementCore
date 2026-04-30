@@ -3,7 +3,7 @@ import logging
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.common.state_transition.base import BaseStateTransition
-from app.modules.room.models.models import Room
+from app.modules.room.models.room import Room
 from app.core.database import SessionLocal
 from app.modules.notifications.services.notification_queue import NotificationQueueService
 from app.modules.user.models import User  # assuming User model is accessible

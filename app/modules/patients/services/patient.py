@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 from app.modules.patients.schemas.base import PatientCreate, PatientUpdate
 from app.modules.user.models import User
 

@@ -6,7 +6,7 @@ from sqlalchemy import select, and_, func
 from app.common.exceptions.report_log import ReportLogNotFoundError
 from app.common.exceptions.user import UserNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.reports.models.models import ReportLog
+from app.modules.reports.models.report import ReportLog
 from app.modules.reports.schemas.base import ReportLogCreate, ReportLogUpdate
 from app.modules.user.models import User
 

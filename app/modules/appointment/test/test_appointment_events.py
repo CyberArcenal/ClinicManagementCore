@@ -6,7 +6,7 @@ from sqlalchemy import event
 from sqlalchemy.orm import Session
 from app.modules.appointment.enums.base import AppointmentStatus
 from app.modules.appointment.events.appointment import register_appointment_events
-from app.modules.appointment.models.base import Appointment
+from app.modules.appointment.models.appointment import Appointment
 from app.modules.appointment.state_transition_service import AppointmentStateTransition
 
 @pytest.mark.asyncio

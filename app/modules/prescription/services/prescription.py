@@ -9,9 +9,9 @@ from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
 from app.common.exceptions.prescription import PrescriptionNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.ehr.models.base import EHR
-from app.modules.patients.models.models import Patient
-from app.modules.prescription.models.models import Prescription
+from app.modules.ehr.models.ehr import EHR
+from app.modules.patients.models.patient import Patient
+from app.modules.prescription.models.prescription import Prescription
 from app.modules.prescription.schemas.base import PrescriptionCreate, PrescriptionUpdate
 from app.modules.prescription.services.prescription_item import PrescriptionItemService
 from app.modules.staff.models.doctor_profile import DoctorProfile

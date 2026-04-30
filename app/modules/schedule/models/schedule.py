@@ -13,4 +13,4 @@ class DoctorSchedule(BaseModel):
     end_time = Column(String(5))    # "17:00"
     is_available = Column(DateTime, default=True)
     
-    doctor = relationship("DoctorProfile", back_populates="schedules")
+    doctor = relationship("app.modules.staff.models.doctor_profile.DoctorProfile", back_populates="schedules")

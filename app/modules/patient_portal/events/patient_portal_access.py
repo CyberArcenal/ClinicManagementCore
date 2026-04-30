@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.patient_portal.models.models import PatientPortalAccess
+from app.modules.patient_portal.models.patient_portal import PatientPortalAccess
 from app.modules.patient_portal.state_transition_service import PatientPortalAccessTransition
 
 def register_patient_portal_access_events():

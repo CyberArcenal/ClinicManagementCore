@@ -11,12 +11,13 @@ def setup_signals() -> None:
         module_name = module_info.name
         try:
             # Try to import the module's event package
-            event_module = importlib.import_module(f"app.modules.{module_name}.event")
+            event_module = importlib.import_module(f"app.modules.{module_name}.events")
             if hasattr(event_module, "register_events") and callable(event_module.register_events):
                 event_module.register_events()
                 print(f"✅ Registered signals for module: {module_name}")
         except ModuleNotFoundError:
             # No event folder or no __init__.py – skip silently
+            print(f"⏭️ No events/__init__.py for module: {module_name} (skipping)")
             pass
         except Exception as e:
             print(f"⚠️ Failed to register signals for {module_name}: {e}")

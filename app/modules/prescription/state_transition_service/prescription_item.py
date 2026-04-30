@@ -3,7 +3,7 @@ import logging
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.common.state_transition.base import BaseStateTransition
-from app.modules.prescription.models.models import PrescriptionItem
+from app.modules.prescription.models.prescription_item import PrescriptionItem
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.common.state_transition.base import BaseStateTransition
 from app.core.database import SessionLocal
-from app.modules.billing.models.base import Payment
+from app.modules.billing.models.payment import Payment
 from app.modules.billing.services.invoice import InvoiceService
 from app.modules.notifications.services.notification_queue import NotificationQueueService
 
@@ -24,7 +24,7 @@ class PaymentTransition(BaseStateTransition[Payment]):
                 recipient=str(instance.invoice.patient.user_id),
                 subject='Payment Received',
                 message=f'Payment of {instance.amount} received for invoice {instance.invoice.invoice_number}.',
-                extra_data={'payment_id': instance.id, 'type': 'payment_received'}
+                extra_data={'payment_id': instance.id, 'notification_type': 'payment_received'}
             )
 
     def _update_invoice_status(self, invoice_id: int) -> None:

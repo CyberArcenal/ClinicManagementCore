@@ -3,7 +3,7 @@ import logging
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.common.state_transition.base import BaseStateTransition
-from app.modules.inventory.models.models import InventoryItem
+from app.modules.inventory.models.inventory_item import InventoryItem
 from app.core.database import SessionLocal
 from app.modules.notifications.services.notification_queue import NotificationQueueService
 from app.modules.user.models import User  # assuming there's a pharmacy manager role

@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.treatment.models.models import Treatment
+from app.modules.treatment.models.treatment import Treatment
 from app.modules.treatment.state_transition_service import TreatmentTransition
 
 def register_treatment_events():

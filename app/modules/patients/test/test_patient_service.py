@@ -5,10 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.user import UserNotFoundError
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 from app.modules.patients.schemas.base import PatientCreate, PatientUpdate
 from app.modules.patients.services.patient import PatientService
-from app.modules.user.models.base import User
+from app.modules.user.models.user import User
 
 
 @pytest.fixture

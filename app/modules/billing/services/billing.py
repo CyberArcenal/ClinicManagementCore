@@ -12,10 +12,11 @@ from app.common.exceptions.billing import (
     InvalidPaymentAmountError,
 )
 from app.modules.billing.enums.base import InvoiceStatus, PaymentMethod
-from app.modules.billing.models.base import BillingItem, Invoice, Payment
+from app.modules.billing.models.billing_item import BillingItem
+from app.modules.billing.models.invoice import Invoice
 from app.modules.billing.schemas.base import BillingItemCreate, BillingItemUpdate, InvoiceCreate, InvoiceUpdate, PaymentCreate, PaymentUpdate
 from app.modules.billing.services.invoice import InvoiceService
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 
 class BillingItemService:
     def __init__(self, db: AsyncSession):

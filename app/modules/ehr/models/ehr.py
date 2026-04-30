@@ -14,8 +14,9 @@ class EHR(BaseModel):
     vital_signs = Column(Text)  # JSON: BP, HR, temp, etc.
     symptoms = Column(Text)
     
-    patient = relationship("Patient", back_populates="ehr_records")
-    doctor = relationship("DoctorProfile", back_populates="ehr_entries")
-    prescriptions = relationship("Prescription", back_populates="ehr_visit")
-    lab_requests = relationship("LabResult", back_populates="ehr_visit")
-    treatments = relationship("Treatment", back_populates="ehr_visit")
+    # Relationships with full module paths
+    patient = relationship("app.modules.patients.models.models.Patient", back_populates="ehr_records")
+    doctor = relationship("app.modules.staff.models.doctor_profile.DoctorProfile", back_populates="ehr_entries")
+    prescriptions = relationship("app.modules.prescription.models.models.Prescription", back_populates="ehr_visit")
+    lab_requests = relationship("app.modules.lab.models.models.LabResult", back_populates="ehr_visit")
+    treatments = relationship("app.modules.treatment.models.models.Treatment", back_populates="ehr_visit")

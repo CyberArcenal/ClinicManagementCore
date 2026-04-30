@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.common.exceptions.room import RoomNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.room.models.models import Room
+from app.modules.room.models.room import Room
 from app.modules.room.schemas.base import RoomCreate, RoomUpdate
 
 class RoomService:
@@ -153,7 +153,7 @@ class RoomService:
         Check if room is available during a time window.
         Assumes Appointment has a room_id field and times.
         """
-        from app.modules.appointment.models.base import Appointment
+        from app.modules.appointment.models.appointment import Appointment
         # Query overlapping appointments for this room
         overlapping = await self.db.execute(
             select(Appointment)

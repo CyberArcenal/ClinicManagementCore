@@ -1,17 +1,16 @@
-# app/modules/user/api/v1/endpoints/user.py
 from datetime import timedelta
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
 from app.common.schema.base import PaginatedResponse
+from app.common.schema.response import SuccessResponse
+from app.common.utils.response import success_response
 from app.modules.user.services.user import UserService
-from app.modules.user.schemas.base import Token, UserCreate, UserUpdate, UserResponse
-
+from app.modules.user.schemas.base import Token, UserCreate, UserResponse, UserUpdate
 from app.modules.user.models import User
 from app.core.config import settings
 from app.common.exceptions.user import (
@@ -24,16 +23,13 @@ router = APIRouter()
 
 
 # ------------------------------------------------------------------
-# Authentication endpoints
+# Authentication endpoints (no wrapper – keep token format)
 # ------------------------------------------------------------------
 @router.post("/login", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
-):
-    """
-    Authenticate user with email and password. Returns JWT access token.
-    """
+) -> Token:
     service = UserService(db)
     user = await service.authenticate(form_data.username, form_data.password)
     if not user:
@@ -50,18 +46,15 @@ async def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     data: UserCreate,
     db: AsyncSession = Depends(get_db),
-):
-    """
-    Register a new user (patient role by default, but can specify role if admin).
-    """
+) -> SuccessResponse[UserResponse]:
     service = UserService(db)
     try:
         user = await service.create_user(data)
-        return user
+        return success_response(data=user, message="User registered successfully")
     except UserAlreadyExistsError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -70,10 +63,7 @@ async def register(
 async def refresh_token(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
-    """
-    Generate a new access token using current user.
-    """
+) -> Token:
     service = UserService(db)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = service.create_access_token(
@@ -84,66 +74,54 @@ async def refresh_token(
 
 
 # ------------------------------------------------------------------
-# User CRUD endpoints (admin or self)
+# User CRUD endpoints (wrapped)
 # ------------------------------------------------------------------
-@router.get("/me", response_model=UserResponse)
+@router.get("/me")
 async def get_current_user_info(
     current_user: User = Depends(get_current_user),
-):
-    """
-    Get information of the currently authenticated user.
-    """
-    return current_user
+) -> SuccessResponse[UserResponse]:
+    return success_response(data=current_user, message="Current user retrieved")
 
 
-@router.put("/me", response_model=UserResponse)
+@router.put("/me")
 async def update_current_user(
     data: UserUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-):
-    """
-    Update current user's own information.
-    """
+) -> SuccessResponse[UserResponse]:
     service = UserService(db)
     try:
         updated = await service.update_user(current_user.id, data)
-        return updated
+        return success_response(data=updated, message="User updated")
     except (UserNotFoundError, UserAlreadyExistsError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/me/change-password", response_model=dict)
+@router.post("/me/change-password")
 async def change_password(
     old_password: str,
     new_password: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-):
-    """
-    Change current user's password.
-    """
+) -> SuccessResponse[None]:
     service = UserService(db)
     success = await service.change_password(current_user.id, old_password, new_password)
     if not success:
         raise HTTPException(status_code=400, detail="Incorrect old password")
-    return {"message": "Password changed successfully"}
+    return success_response(data=None, message="Password changed successfully")
 
 
-@router.get("/", response_model=PaginatedResponse[UserResponse])
+@router.get("/")
 async def list_users(
     role: Optional[str] = Query(None),
     is_active: Optional[bool] = Query(None),
     email_contains: Optional[str] = Query(None),
     full_name_contains: Optional[str] = Query(None),
-    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
-    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
-    """
-    List all users. Admin only.
-    """
+) -> SuccessResponse[PaginatedResponse[UserResponse]]:
     filters = {}
     if role:
         filters["role"] = role
@@ -160,35 +138,35 @@ async def list_users(
         page=page,
         page_size=page_size
     )
-    return paginated
+    return success_response(data=paginated, message="Users retrieved")
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}")
 async def get_user(
     user_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> SuccessResponse[UserResponse]:
     service = UserService(db)
     user = await service.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return success_response(data=user, message="User retrieved")
 
 
-@router.put("/{user_id}", response_model=UserResponse)
+@router.put("/{user_id}")
 async def update_user(
     user_id: int,
     data: UserUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> SuccessResponse[UserResponse]:
     service = UserService(db)
     try:
         user = await service.update_user(user_id, data)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return user
+        return success_response(data=user, message="User updated")
     except (UserNotFoundError, UserAlreadyExistsError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -198,7 +176,7 @@ async def delete_user(
     user_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> None:
     service = UserService(db)
     deleted = await service.delete_user(user_id)
     if not deleted:

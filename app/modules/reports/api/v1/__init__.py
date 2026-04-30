@@ -1,4 +1,3 @@
-# app/modules/report_log/api/v1/__init__.py
 from fastapi import APIRouter
 from .endpoints.report_log import router as report_log_router
 

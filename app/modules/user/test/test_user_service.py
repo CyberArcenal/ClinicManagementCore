@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.user import InvalidCredentialsError, UserAlreadyExistsError
 from app.modules.user.enums.base import UserRole
-from app.modules.user.models.base import User
+from app.modules.user.models.user import User
 from app.modules.user.schemas.base import UserCreate, UserUpdate
 from app.modules.user.services.user import UserService
 

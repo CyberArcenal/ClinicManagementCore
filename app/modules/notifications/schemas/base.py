@@ -45,7 +45,7 @@ class NotifyLogBase(BaseSchema):
     recipient_email: str
     subject: Optional[str] = None
     payload: Optional[str] = None
-    type: str = "custom"
+    notification_type: str = "custom"
     status: str = NotifyStatus.QUEUED.value
     error_message: Optional[str] = None
     channel: str = "email"
@@ -74,3 +74,8 @@ class NotifyLogUpdate(BaseSchema):
 
 class NotifyLogResponse(TimestampSchema, NotifyLogBase):
     pass
+
+
+
+EmailTemplateUpdate.model_rebuild()
+EmailTemplateResponse.model_rebuild()

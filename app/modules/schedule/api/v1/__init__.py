@@ -1,4 +1,3 @@
-# app/modules/schedule/api/v1/__init__.py
 from fastapi import APIRouter
 from .endpoints.schedule import router as schedule_router
 

@@ -6,9 +6,9 @@ from sqlalchemy import select, and_, func
 
 from app.common.exceptions.base import PatientNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.patient_portal.models.models import PatientPortalAccess
+from app.modules.patient_portal.models.patient_portal import PatientPortalAccess
 from app.modules.patient_portal.schemas.base import PatientPortalAccessCreate, PatientPortalAccessUpdate
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 
 
 class PatientPortalAccessService:

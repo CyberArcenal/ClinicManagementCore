@@ -6,15 +6,16 @@ Run: python scripts/seed_dev_data.py
 
 import sys
 import os
-
-from app.modules.appointment.models.base import Appointment
-from app.modules.billing.models.base import BillingItem, Invoice
-from app.modules.inventory.models.models import InventoryItem
-from app.modules.lab.models.models import LabResult, LabStatus
+from pathlib import Path
+from app.modules.appointment.models.appointment import Appointment
+from app.modules.billing.models.billing_item import BillingItem
+from app.modules.billing.models.invoice import Invoice
+from app.modules.inventory.models.inventory_item import InventoryItem
+from app.modules.lab.models.lab import LabResult, LabStatus
 from app.modules.notifications.models.email_template import EmailTemplate
-from app.modules.patients.models.models import Patient
-from app.modules.prescription.models.models import Prescription, PrescriptionItem
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from app.modules.patients.models.patient import Patient
+from app.modules.prescription.models import Prescription, PrescriptionItem
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from datetime import datetime, timedelta, date
 from decimal import Decimal
@@ -297,7 +298,7 @@ def seed_billing(db, patient):
             status=InvoiceStatus.DRAFT
         )
         db.add(inv)
-        db.commit()
+        db.commit() 
         # Add item
         item = BillingItem(
             invoice_id=inv.id,

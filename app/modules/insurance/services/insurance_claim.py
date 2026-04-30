@@ -9,10 +9,10 @@ from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.billing import InvoiceNotFoundError
 from app.common.exceptions.insurance import ClaimAmountExceedsInvoiceError, DuplicateInsuranceError, InsuranceClaimNotFoundError, InsuranceCoverageExpiredError, InsuranceDetailNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.billing.models.base import Invoice
-from app.modules.insurance.models.models import InsuranceClaim, InsuranceDetail
+from app.modules.billing.models.invoice import Invoice
+from app.modules.insurance.models.insurance_claim import InsuranceClaim
 from app.modules.insurance.schemas.base import InsuranceClaimCreate, InsuranceClaimUpdate, InsuranceDetailCreate, InsuranceDetailUpdate
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 
 
 class InsuranceClaimService:

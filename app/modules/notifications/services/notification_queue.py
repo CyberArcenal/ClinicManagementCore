@@ -45,7 +45,7 @@ class NotificationQueueService:
                     recipient_email=recipient,
                     subject=subject,
                     payload=message,
-                    type=template_name or 'custom',
+                    notification_type=template_name or 'custom',
                     status='queued',
                     channel=channel,
                     priority='normal',

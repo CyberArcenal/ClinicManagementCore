@@ -1,47 +1,50 @@
-# app/modules/inventory/api/v1/endpoints/inventory_transaction.py
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
-from app.common.exceptions.inventory import InsufficientStockError, InventoryItemNotFoundError, InventoryTransactionNotFoundError
+from app.common.exceptions.inventory import InventoryItemNotFoundError, InventoryTransactionNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.inventory.schemas.base import InventoryItemCreate, InventoryItemResponse, InventoryItemUpdate, InventoryTransactionCreate, InventoryTransactionResponse, InventoryTransactionUpdate
-from app.modules.inventory.services.inventory_item import InventoryItemService
+from app.common.schema.response import SuccessResponse
+from app.common.utils.response import success_response
+from app.modules.inventory.schemas.base import (
+    InventoryTransactionCreate,
+    InventoryTransactionResponse,
+    InventoryTransactionUpdate,
+)
 from app.modules.inventory.services.inventory_transaction import InventoryTransactionService
 from app.modules.user.models import User
-
 
 router = APIRouter()
 
 
-@router.post("/", response_model=InventoryTransactionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_transaction(
     data: InventoryTransactionCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("pharmacist")),
-):
+) -> SuccessResponse[InventoryTransactionResponse]:
     service = InventoryTransactionService(db)
     try:
         transaction = await service.create_transaction(data)
-        return transaction
+        return success_response(data=transaction, message="Transaction created")
     except InventoryItemNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=PaginatedResponse[InventoryTransactionResponse])
+@router.get("/")
 async def list_transactions(
     item_id: Optional[int] = Query(None),
     transaction_type: Optional[str] = Query(None),
     performed_by_id: Optional[int] = Query(None),
-    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
-    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("pharmacist")),
-):
+) -> SuccessResponse[PaginatedResponse[InventoryTransactionResponse]]:
     filters = {}
     if item_id:
         filters["item_id"] = item_id
@@ -54,37 +57,37 @@ async def list_transactions(
     paginated = await service.get_transactions(
         filters=filters,
         page=page,
-        page_size=page_size
+        page_size=page_size,
     )
-    return paginated
+    return success_response(data=paginated, message="Transactions retrieved")
 
 
-@router.get("/{transaction_id}", response_model=InventoryTransactionResponse)
+@router.get("/{transaction_id}")
 async def get_transaction(
     transaction_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("pharmacist")),
-):
+) -> SuccessResponse[InventoryTransactionResponse]:
     service = InventoryTransactionService(db)
     transaction = await service.get_transaction(transaction_id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    return transaction
+    return success_response(data=transaction, message="Transaction retrieved")
 
 
-@router.put("/{transaction_id}", response_model=InventoryTransactionResponse)
+@router.put("/{transaction_id}")
 async def update_transaction(
     transaction_id: int,
     data: InventoryTransactionUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> SuccessResponse[InventoryTransactionResponse]:
     service = InventoryTransactionService(db)
     try:
         transaction = await service.update_transaction(transaction_id, data)
         if not transaction:
             raise HTTPException(status_code=404, detail="Transaction not found")
-        return transaction
+        return success_response(data=transaction, message="Transaction updated")
     except InventoryTransactionNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -94,7 +97,7 @@ async def delete_transaction(
     transaction_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> None:
     service = InventoryTransactionService(db)
     deleted = await service.delete_transaction(transaction_id)
     if not deleted:

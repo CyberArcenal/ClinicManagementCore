@@ -2,7 +2,7 @@ from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
 
-from app.modules.reports.models.models import ReportLog
+from app.modules.reports.models.report import ReportLog
 from app.modules.reports.state_transition_service.report_log import ReportLogTransition
 
 def register_report_log_events():

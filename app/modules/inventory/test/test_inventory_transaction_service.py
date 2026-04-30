@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.inventory import InventoryItemNotFoundError
-from app.modules.inventory.models.models import InventoryTransaction
+from app.modules.inventory.models.inventory_item import InventoryTransaction
 from app.modules.inventory.schemas.base import InventoryTransactionCreate, InventoryTransactionUpdate
 from app.modules.inventory.services.inventory_transaction import InventoryTransactionService
 

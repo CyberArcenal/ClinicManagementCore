@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.core.database import Base, engine
 from app.core.config import settings
-from app.core.middlewares.handlers import add_exception_handlers
+from app.core.middlewares.handlers import add_exception_handlers, override_openapi_schema
 from app.core.setup.health import setup_health_check
 from app.core.setup.middlewares import setup_middleware
+from app.core.setup.openapi import validate_openapi
 from app.core.setup.signals import setup_signals
 from app.core.setup.router_discovery import discover_and_register_routers
 
@@ -29,6 +30,8 @@ def create_app() -> FastAPI:
     discover_and_register_routers(app, api_prefix="/api/v1")
     setup_health_check(app)
     add_exception_handlers(app)
+    override_openapi_schema(app)
+    validate_openapi(app)
     return app
 
 app = create_app()

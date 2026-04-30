@@ -1,4 +1,3 @@
-# app/modules/insurance/api/v1/__init__.py
 from fastapi import APIRouter
 from .endpoints.insurance_detail import router as detail_router
 from .endpoints.insurance_claim import router as claim_router

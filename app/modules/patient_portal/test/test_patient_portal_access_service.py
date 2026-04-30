@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.base import PatientNotFoundError
-from app.modules.patient_portal.models.models import PatientPortalAccess
+from app.modules.patient_portal.models.patient_portal import PatientPortalAccess
 from app.modules.patient_portal.schemas.base import PatientPortalAccessCreate
 from app.modules.patient_portal.services.base import PatientPortalAccessService
 

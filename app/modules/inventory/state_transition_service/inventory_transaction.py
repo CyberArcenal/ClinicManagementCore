@@ -3,9 +3,9 @@ import logging
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.common.state_transition.base import BaseStateTransition
-from app.modules.inventory.models.models import InventoryTransaction
 from app.core.database import SessionLocal
-from app.modules.inventory.models.models import InventoryItem
+from app.modules.inventory.models.inventory_item import InventoryItem
+from app.modules.inventory.models.inventory_transaction import InventoryTransaction
 from app.modules.notifications.services.notification_queue import NotificationQueueService
 
 logger = logging.getLogger(__name__)

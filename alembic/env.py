@@ -11,28 +11,28 @@ from app.core.config import settings
 from app.common.models.base import BaseModel
 
 # Import all models
-from app.modules.appointment.models.base import Appointment
+from app.modules.appointment.models.appointment import Appointment
 from app.modules.billing.models.base import Invoice, BillingItem, Payment
-from app.modules.ehr.models.base import EHR
+from app.modules.ehr.models.ehr import EHR
 from app.modules.insurance.models.models import InsuranceDetail, InsuranceClaim
-from app.modules.inventory.models.models import InventoryItem, InventoryTransaction
-from app.modules.lab.models.models import LabResult
+from app.modules.inventory.models.inventory_item import InventoryItem, InventoryTransaction
+from app.modules.lab.models.lab import LabResult
 from app.modules.notifications.models.email_template import EmailTemplate
 from app.modules.notifications.models.inapp_notification import Notification
 from app.modules.notifications.models.notify_log import NotifyLog
-from app.modules.patient_portal.models.models import PatientPortalAccess
-from app.modules.patients.models.models import Patient
+from app.modules.patient_portal.models.patient_portal import PatientPortalAccess
+from app.modules.patients.models.patient import Patient
 from app.modules.prescription.models.models import Prescription, PrescriptionItem
-from app.modules.reports.models.models import ReportLog
-from app.modules.room.models.models import Room
+from app.modules.reports.models.report import ReportLog
+from app.modules.room.models.room import Room
 from app.modules.schedule.models.schedule import DoctorSchedule
 from app.modules.staff.models.doctor_profile import DoctorProfile
 from app.modules.staff.models.nurse_profile import NurseProfile
 from app.modules.staff.models.receptionist_profile import ReceptionistProfile
 from app.modules.staff.models.labtech_profile import LabTechProfile
 from app.modules.staff.models.pharmacist_profile import PharmacistProfile
-from app.modules.treatment.models.models import Treatment
-from app.modules.user.models.base import User
+from app.modules.treatment.models.treatment import Treatment
+from app.modules.user.models.user import User
 
 # Alembic Config object
 config = context.config

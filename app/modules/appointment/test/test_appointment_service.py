@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.base import AppointmentConflictError, DoctorNotFoundError, InvalidStatusTransitionError, PatientNotFoundError
 from app.modules.appointment.enums.base import AppointmentStatus
-from app.modules.appointment.models.base import Appointment
+from app.modules.appointment.models.appointment import Appointment
 from app.modules.appointment.schemas.base import AppointmentCreate
 from app.modules.appointment.services.base import AppointmentService
 

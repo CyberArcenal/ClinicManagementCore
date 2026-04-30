@@ -1,78 +1,75 @@
-# app/modules/billing/invoice_api.py
-from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.api.db import get_db
 from app.common.dependencies.auth import get_current_user, require_role
-from app.common.exceptions.base import PatientNotFoundError
 from app.common.exceptions.billing import BillingItemNotFoundError, InvoiceNotFoundError
-from app.modules.billing.enums.base import InvoiceStatus
-from app.modules.billing.schemas.base import BillingItemCreate, BillingItemResponse, BillingItemUpdate, InvoiceCreate, InvoiceResponse, InvoiceUpdate
+from app.common.schema.base import PaginatedResponse
+from app.common.schema.response import SuccessResponse
+from app.common.utils.response import success_response
+from app.modules.billing.schemas.base import BillingItemCreate, BillingItemResponse, BillingItemUpdate
 from app.modules.billing.services.billing import BillingItemService
-from app.modules.billing.services.invoice import InvoiceService
-from app.modules.user.models.base import User
+from app.modules.user.models.user import User
 
-router = APIRouter(prefix="/billing-items", tags=["Billing Items"])
+router = APIRouter()
 
 
-@router.post("/", response_model=BillingItemResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_billing_item(
     data: BillingItemCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> SuccessResponse[BillingItemResponse]:
     service = BillingItemService(db)
     try:
         item = await service.create_item(data)
-        return item
+        return success_response(data=item, message="Billing item created")
     except InvoiceNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/", response_model=List[BillingItemResponse])
+@router.get("/")
 async def list_billing_items(
     invoice_id: Optional[int] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-):
+) -> SuccessResponse[list[BillingItemResponse]]:
     service = BillingItemService(db)
     if invoice_id:
         items = await service.get_items_by_invoice(invoice_id)
+        return success_response(data=items, message="Billing items retrieved")
     else:
-        # If no filter, maybe limited query – we can implement a general get_all
-        items = []  # optionally implement get_all_items in service
-    return items
+        return success_response(data=[], message="No billing items (filter by invoice_id)")
 
 
-@router.get("/{item_id}", response_model=BillingItemResponse)
+@router.get("/{item_id}")
 async def get_billing_item(
     item_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-):
+) -> SuccessResponse[BillingItemResponse]:
     service = BillingItemService(db)
     item = await service.get_item(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Billing item not found")
-    return item
+    return success_response(data=item, message="Billing item retrieved")
 
 
-@router.put("/{item_id}", response_model=BillingItemResponse)
+@router.put("/{item_id}")
 async def update_billing_item(
     item_id: int,
     data: BillingItemUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> SuccessResponse[BillingItemResponse]:
     service = BillingItemService(db)
     try:
         item = await service.update_item(item_id, data)
         if not item:
             raise HTTPException(status_code=404, detail="Billing item not found")
-        return item
+        return success_response(data=item, message="Billing item updated")
     except BillingItemNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -82,7 +79,7 @@ async def delete_billing_item(
     item_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
-):
+) -> None:
     service = BillingItemService(db)
     deleted = await service.delete_item(item_id)
     if not deleted:

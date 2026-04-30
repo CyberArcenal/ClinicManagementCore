@@ -1,4 +1,3 @@
-# app/modules/patient_portal/api/v1/__init__.py
 from fastapi import APIRouter
 from .endpoints.patient_portal_access import router as portal_router
 

@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.appointment.models.base import Appointment
+from app.modules.appointment.models.appointment import Appointment
 from app.modules.appointment.state_transition_service import AppointmentStateTransition
 
 def register_appointment_events():

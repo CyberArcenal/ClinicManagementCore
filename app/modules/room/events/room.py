@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.room.models.models import Room
+from app.modules.room.models.room import Room
 from app.modules.room.state_transition_service import RoomTransition
 
 def register_room_events():

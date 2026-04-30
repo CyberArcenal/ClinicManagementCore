@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.staff import NurseNotFoundError
 from app.common.exceptions.treatment import TreatmentNotFoundError
-from app.modules.treatment.models.models import Treatment
+from app.modules.treatment.models.treatment import Treatment
 from app.modules.treatment.schemas.treatment import TreatmentCreate, TreatmentUpdate
 from app.modules.treatment.services.treatment import TreatmentService
 

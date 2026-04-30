@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.room import RoomNotFoundError
-from app.modules.room.models.models import Room
+from app.modules.room.models.room import Room
 from app.modules.room.schemas.base import RoomCreate, RoomUpdate
 from app.modules.room.services.room import RoomService
 

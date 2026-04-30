@@ -18,7 +18,7 @@ class NotifyLog(BaseModel):
     recipient_email = Column(String(255), nullable=False)
     subject = Column(String(255), nullable=True)
     payload = Column(Text, nullable=True)
-    type = Column(String(50), nullable=False, default="custom")  # store TemplateType value
+    notification_type = Column(String(50), nullable=False, default="custom")  # store TemplateType value
     status = Column(String(20), nullable=False, default=NotifyStatus.QUEUED.value)
     error_message = Column(Text, nullable=True)
     channel = Column(String(50), nullable=False, default="email")

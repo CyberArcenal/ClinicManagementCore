@@ -26,16 +26,16 @@ class NotifyLogTransition(BaseStateTransition[NotifyLog]):
 
         try:
             # If template name is given (not 'custom'), render using EmailTemplate
-            if instance.type and instance.type != 'custom':
+            if instance.notification_type and instance.notification_type != 'custom':
                 db = SessionLocal()
                 try:
                     template_svc = EmailTemplateService(db)
-                    template = template_svc.get_template_by_name_sync(instance.type)
+                    template = template_svc.get_template_by_name_sync(instance.notification_type)
                     if template:
                         context = instance.extra_data or {}
                         rendered_subject, rendered_body = template_svc.render_template(template, context)
                     else:
-                        error_msg = f"Template '{instance.type}' not found"
+                        error_msg = f"Template '{instance.notification_type}' not found"
                         raise ValueError(error_msg)
                 finally:
                     db.close()

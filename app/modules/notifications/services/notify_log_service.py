@@ -38,8 +38,8 @@ class NotifyLogService:
                 query = query.where(NotifyLog.channel == filters["channel"])
             if "recipient_email" in filters:
                 query = query.where(NotifyLog.recipient_email == filters["recipient_email"])
-            if "type" in filters:
-                query = query.where(NotifyLog.type == filters["type"])
+            if "notification_type" in filters:
+                query = query.where(NotifyLog.notification_type == filters["notification_type"])
         # Count total
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.db.scalar(count_query)
@@ -62,7 +62,7 @@ class NotifyLogService:
             recipient_email=data.recipient_email,
             subject=data.subject,
             payload=data.payload,
-            type=data.type,
+            notification_type=data.notification_type,
             status=data.status,
             error_message=data.error_message,
             channel=data.channel,

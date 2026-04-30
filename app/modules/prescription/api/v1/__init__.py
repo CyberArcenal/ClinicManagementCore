@@ -1,4 +1,3 @@
-# app/modules/prescription/api/v1/__init__.py
 from fastapi import APIRouter
 from .endpoints.prescription import router as prescription_router
 from .endpoints.prescription_item import router as prescription_item_router

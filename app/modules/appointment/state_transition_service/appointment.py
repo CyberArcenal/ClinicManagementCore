@@ -7,8 +7,8 @@ from sqlalchemy import insert
 from app.common.state_transition.base import BaseStateTransition
 from app.core.database import SessionLocal
 from app.modules.appointment.enums.base import AppointmentStatus
-from app.modules.appointment.models.base import Appointment
-from app.modules.billing.models.base import BillingItem
+from app.modules.appointment.models.appointment import Appointment
+from app.modules.billing.models.billing_item import BillingItem
 from app.modules.notifications.services.notification_queue import NotificationQueueService
 
 logger = logging.getLogger(__name__)

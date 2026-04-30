@@ -10,11 +10,11 @@ from app.common.exceptions.ehr import EHRNotFoundError
 from app.common.exceptions.staff import NurseNotFoundError
 from app.common.exceptions.treatment import TreatmentNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.ehr.models.base import EHR
-from app.modules.patients.models.models import Patient
+from app.modules.ehr.models.ehr import EHR
+from app.modules.patients.models.patient import Patient
 from app.modules.staff.models.doctor_profile import DoctorProfile
 from app.modules.staff.models.nurse_profile import NurseProfile
-from app.modules.treatment.models.models import Treatment
+from app.modules.treatment.models.treatment import Treatment
 from app.modules.treatment.schemas.treatment import TreatmentCreate, TreatmentUpdate
 
 

@@ -4,7 +4,6 @@ from decimal import Decimal
 from typing import Optional, List
 from pydantic import BaseModel
 from app.common.schema.base import BaseSchema, TimestampSchema
-from app.common.schema.base import BaseSchema
 from app.modules.billing.enums.base import InvoiceStatus, PaymentMethod
 
 # ----- Invoice -----

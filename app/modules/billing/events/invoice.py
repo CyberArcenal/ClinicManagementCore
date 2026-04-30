@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.billing.models.base import Invoice
+from app.modules.billing.models.invoice import Invoice
 from app.modules.billing.state_transition_service import InvoiceTransition
 
 def register_invoice_events():

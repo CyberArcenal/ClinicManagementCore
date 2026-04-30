@@ -10,7 +10,7 @@ from app.common.exceptions.user import UserNotFoundError
 from app.common.schema.base import PaginatedResponse
 from app.modules.staff.models.doctor_profile import DoctorProfile
 from app.modules.staff.models.receptionist_profile import ReceptionistProfile
-from app.modules.user.models.base import User
+from app.modules.user.models.user import User
 from app.modules.user.schemas.base import DoctorProfileCreate, DoctorProfileUpdate, ReceptionistProfileCreate, ReceptionistProfileUpdate
 
 

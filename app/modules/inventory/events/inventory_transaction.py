@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.inventory.models.models import InventoryTransaction
+from app.modules.inventory.models.inventory_transaction import InventoryTransaction
 from app.modules.inventory.state_transition_service import InventoryTransactionTransition
 
 def register_inventory_transaction_events():

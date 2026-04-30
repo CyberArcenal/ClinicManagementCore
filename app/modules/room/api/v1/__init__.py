@@ -1,4 +1,3 @@
-# app/modules/room/api/v1/__init__.py
 from fastapi import APIRouter
 from .endpoints.room import router as room_router
 

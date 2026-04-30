@@ -9,10 +9,10 @@ from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
 from app.common.exceptions.lab import InvalidLabStatusTransitionError, LabTechNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.ehr.models.base import EHR
-from app.modules.lab.models.models import LabResult, LabStatus
+from app.modules.ehr.models.ehr import EHR
+from app.modules.lab.models.lab import LabResult, LabStatus
 from app.modules.lab.schemas.base import LabResultCreate, LabResultUpdate
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 from app.modules.staff.models.doctor_profile import DoctorProfile
 from app.modules.staff.models.labtech_profile import LabTechProfile
 

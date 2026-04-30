@@ -6,9 +6,9 @@ from sqlalchemy import select, func
 
 from app.common.exceptions.inventory import InsufficientStockError, InventoryItemNotFoundError, InventoryTransactionNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.inventory.models.models import InventoryItem, InventoryTransaction
+from app.modules.inventory.models.inventory_item import InventoryItem
+from app.modules.inventory.models.inventory_transaction import InventoryTransaction
 from app.modules.inventory.schemas.base import InventoryItemCreate, InventoryItemUpdate, InventoryTransactionCreate, InventoryTransactionUpdate
-from sqlchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 
 

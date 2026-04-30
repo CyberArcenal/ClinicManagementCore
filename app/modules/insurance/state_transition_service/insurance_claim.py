@@ -4,11 +4,11 @@ from decimal import Decimal
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.common.state_transition.base import BaseStateTransition
-from app.modules.billing.models.base import Invoice
-from app.modules.insurance.models.models import InsuranceClaim
 from app.core.database import SessionLocal
+from app.modules.billing.models.invoice import Invoice
+from app.modules.insurance.models.insurance_claim import InsuranceClaim
 from app.modules.notifications.services.notification_queue import NotificationQueueService
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 from app.modules.staff.models.doctor_profile import DoctorProfile
 
 logger = logging.getLogger(__name__)

@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.exceptions.base import DoctorNotFoundError, PatientNotFoundError
 from app.common.exceptions.ehr import EHRNotFoundError
 from app.common.schema.base import PaginatedResponse
-from app.modules.ehr.models.base import EHR
+from app.modules.ehr.models.ehr import EHR
 from app.modules.ehr.schemas.base import EHRCreate, EHRUpdate
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
 from app.modules.staff.models.doctor_profile import DoctorProfile
 from sqlalchemy.orm import selectinload
 

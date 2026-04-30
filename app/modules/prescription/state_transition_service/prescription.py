@@ -6,10 +6,10 @@ from app.common.state_transition.base import BaseStateTransition
 from app.modules.inventory.schemas.base import InventoryTransactionCreate
 from app.modules.inventory.services.inventory_item import InventoryItemService
 from app.modules.inventory.services.inventory_transaction import InventoryTransactionService
-from app.modules.prescription.models.models import Prescription
 from app.core.database import SessionLocal
 from app.modules.notifications.services.notification_queue import NotificationQueueService
-from app.modules.patients.models.models import Patient
+from app.modules.patients.models.patient import Patient
+from app.modules.prescription.models.prescription import Prescription
 from app.modules.staff.models.doctor_profile import DoctorProfile
 
 

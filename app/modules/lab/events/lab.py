@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SQLSession
 import inspect
-from app.modules.lab.models.models import LabResult
+from app.modules.lab.models.lab import LabResult
 from app.modules.lab.state_transition_service import LabResultTransition
 
 def register_lab_events():

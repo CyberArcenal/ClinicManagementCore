@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.report_log import ReportLogNotFoundError
 from app.common.exceptions.user import UserNotFoundError
-from app.modules.reports.models.models import ReportLog
+from app.modules.reports.models.report import ReportLog
 from app.modules.reports.schemas.base import ReportLogCreate, ReportLogUpdate
 from app.modules.reports.services.base import ReportLogService
 

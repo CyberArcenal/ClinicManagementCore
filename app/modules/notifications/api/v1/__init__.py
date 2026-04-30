@@ -1,4 +1,3 @@
-# app/modules/notification/api/v1/__init__.py
 from fastapi import APIRouter
 from .endpoints.email_template import router as email_template_router
 from .endpoints.inapp_notification import router as inapp_notification_router

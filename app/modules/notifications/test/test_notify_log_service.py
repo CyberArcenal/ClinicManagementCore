@@ -31,7 +31,7 @@ async def test_create_log_success(service, mock_db):
         recipient_email="patient@example.com",
         subject="Appointment Reminder",
         payload="Your appointment at 10am",
-        type="reminder",
+        notification_type="reminder",
         status=NotifyStatus.QUEUED.value,
         channel="email"
     )

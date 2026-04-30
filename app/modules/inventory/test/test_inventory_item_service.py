@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions.inventory import InsufficientStockError, InventoryItemNotFoundError
-from app.modules.inventory.models.models import InventoryItem
+from app.modules.inventory.models.inventory_item import InventoryItem
 from app.modules.inventory.schemas.base import InventoryItemCreate, InventoryItemUpdate
 from app.modules.inventory.services.inventory_item import InventoryItemService
 
